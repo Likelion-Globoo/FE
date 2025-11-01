@@ -30,7 +30,7 @@ function App() {
   return (
     <>
     <GlobalStyle />
-    {location.pathname !== "/login" && <Header />}
+    {location.pathname !== "/login" && location.pathname !== "/" && <Header />}
 
     <Routes>
       <Route path="/" element={<Main />} />
