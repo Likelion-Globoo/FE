@@ -14,8 +14,8 @@ const GlobalStyle = createGlobalStyle`
     --black: #030712;
     --yellow2: #FFE6A2;
     --skyblue: #66CAE7;
-    --chip-skyblue: #B4D6EC;
-    --chip-green: #89B6BC;
+    --chip-skyblue: #86cfff;
+    --chip-green: #a6ebf4;
     }
 
   /* 폰트 1 : 학교안심 둥근미소 */
