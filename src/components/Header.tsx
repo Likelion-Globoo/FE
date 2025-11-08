@@ -23,9 +23,11 @@ const HeaderLogo = styled.img`
 const Menu = styled.div`
   display: flex;
   flex-direction: row;
-  gap: 3.5rem;
+  gap: 2.5rem;
 `
 const MenuItem = styled.div`
+  display: flex;
+  justify-content: flex-end;
   font-family: 'SchoolSafetyRoundedSmile';
   font-size: 1.25rem;
   font-weight: 400;
@@ -49,6 +51,7 @@ export default function Header() {
         <MenuItem onClick={() => navigate("/profile")}>프로필 조회</MenuItem>
         <MenuItem onClick={() => navigate("/message")}>대화방</MenuItem>
         <MenuItem onClick={() => navigate("/mypage")}>MYPAGE</MenuItem>
+        <MenuItem onClick={() => navigate("/login")}>로그인</MenuItem>
       </Menu>
     </Container>
   )
