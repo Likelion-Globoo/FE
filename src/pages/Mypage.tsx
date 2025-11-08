@@ -1,94 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import ProfileCard from "../components/ProfileCard";
 import ActivityTabs from "../components/ActivityTabs";
+import axiosInstance from "../../axiosInstance";
 import { type UserMeResponse, type Post } from "../types/mypage&profile.types";
-
-// 목 데이터(나중에 삭제)
-const mockUserData: UserMeResponse = {
-  id: 1,
-  email: "likelion@hufs.ac.kr",
-  username: "홍길동",
-  profile: {
-    nickname: "멋쟁이",
-    campus: "GLOBAL",
-    mbti: "ENFP",
-    country: "KR",
-    profileImage: null,
-    infoTitle: "저는 운동과 음악을 좋아하는 학생입니다 저와 같이 스터디를 즐기실 분을 찾고 있어요",
-    infoContent: "저는 친구들과 평소 친구들과 외국어 회화 스터디를 즐겨하며 회화 채널을 자주 봐요. 다른 사람들과 함께 모여 언어를 배우는 것에 흥미를 느낍니다. 평소 친구들과 외국어 회화 스터디를 즐겨하며 회화 채널을 자주 봐요. 다른 사람들과 함께 모여 언어를 배우는 것에 흥미를 느낍니다. 평소 친구들과 외국어 회화 스터디를 즐겨하며 회화 채널을 자주 봐요. 다른 사람들과 함께 모여 언어를 배우는 것에 흥미를 느낍니다.  스터디를 즐기실 분을 찾고있어요. 다른 사람들과 함께하는 것을 즐기며 늘 긍정적인 에너지를 드립니다. 저는 친구들과 외국어 스터디를 즐겨하시 하실 분을 찾고 있어요. 다른 사람들과 함께하는 것을 즐기며 늘 긍정적인 에너지를 빠드는 것을 좋아요."
-  },
-  languages: [
-    { code: "한국어", type: "NATIVE" },
-    { code: "영어", type: "LEARN" }
-  ],
-  keywords: [
-    { id: 1, name: "긍정적" },
-    { id: 2, name: "운동" },
-    { id: 3, name: "음악" }
-  ]
-};
-
-const mockPosts: Post[] = [
-  {
-    id: "1",
-    status: "모집중",
-    currentParticipants: 3,
-    maxParticipants: 15,
-    title: "2025-2 영어 회화 스터디 참여자 모집합니다.(비대면 가능)",
-    tags: ["글로벌캠퍼스", "한국어", "영어"],
-    createdAt: "2025-10-20"
-  },
-  {
-    id: "2",
-    status: "마감",
-    currentParticipants: 15,
-    maxParticipants: 15,
-    title: "2025-2 영어 회화 스터디 참여자 모집합니다.(비대면 가능)",
-    tags: ["글로벌캠퍼스", "한국어", "영어"],
-    createdAt: "2025-10-15"
-  },
-  {
-    id: "3",
-    status: "모집중",
-    currentParticipants: 3,
-    maxParticipants: 13,
-    title: "2025-2 영어 회화 스터디 참여자 모집합니다.(비대면 가능)",
-    tags: ["글로벌캠퍼스", "한국어", "영어"],
-    createdAt: "2025-10-18"
-  },
-  {
-    id: "4",
-    status: "모집중",
-    currentParticipants: 3,
-    maxParticipants: 15,
-    title: "2025-2 영어 회화 스터디 참여자 모집합니다.(비대면 가능)",
-    tags: ["글로벌캠퍼스", "한국어", "영어"],
-    createdAt: "2025-10-12"
-  }
-];
-
-const mockComments: { id: number; postId: number; postTitle: string; content: string; }[] = [
-  { 
-    id: 101, 
-    postId: 1, 
-    postTitle: "2025-2 영어 회화 스터디 참여자 모집합니다.(비대면 가능)", 
-    content: "영어 마침 배워보고 싶었는데 참여하나요? 친구랑 같이 참여해보고 싶어요!" 
-  },
-  { 
-    id: 102, 
-    postId: 2, 
-    postTitle: "2025-2 영어 회화 스터디 참여자 모집합니다.(비대면 가능)", 
-    content: "스터디 내용이 궁금해요! 자세한 커리큘럼 알려주실 수 있나요?" 
-  },
-  { 
-    id: 103, 
-    postId: 3, 
-    postTitle: "2025-2 영어 회화 스터디 참여자 모집합니다.(비대면 가능)", 
-    content: "저도 참여하고 싶은데 마감인가요? 대기 걸어둘게요!" 
-  }
-];
-
 
 const Container = styled.div`
   width: 100%;
@@ -103,70 +18,194 @@ const ContentWrapper = styled.div`
   padding: 0 2rem;
 `;
 
+
 const PageTitle = styled.h1`
   margin-bottom: 2.5rem;
 `;
 
 const Mypage = () => {
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
+  const [userData, setUserData] = useState<any>(null);
+  const [languages, setLanguages] = useState<{ nativeCodes: string[]; learnCodes: string[] }>({
+    nativeCodes: [],
+    learnCodes: []
+  });
+  const [keywords, setKeywords] = useState<{ personality: string[]; hobby: string[]; topic: string[] }>({
+    personality: [],
+    hobby: [],
+    topic: []
+  });
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<"posts" | "comments">("posts");
 
-  const handleProfileEdit = () => {
-    setIsEditMode(true);
+  // 언어 코드 → 한글 매핑 객체
+  const LANGUAGE_MAP: Record<string, string> = {
+    ko: "한국어",
+    en: "영어",
+    es: "스페인어",
+    fr: "프랑스어",
+    ja: "일본어",
+    zh: "중국어",
+    de: "독일어",
+    it: "이탈리아어",
   };
 
-  const handleProfileSave = (updatedData: any) => {
-    console.log("저장된 데이터:", updatedData);
-    // API 호출하여 데이터 저장
-    setIsEditMode(false);
+  const LANGUAGE_REVERSE_MAP: Record<string, string> = {
+    한국어: "ko",
+    영어: "en",
+    스페인어: "es",
+    프랑스어: "fr",
+    일본어: "ja",
+    중국어: "zh",
+    독일어: "de",
+    이탈리아어: "it",
   };
 
-  const handleProfileCancel = () => {
-    setIsEditMode(false);
-  };
-
-  // 사용언어, 선호언어 정보 추출
-  const nativeLanguages = mockUserData.languages
-    .filter(lang => lang.type === 'NATIVE')
-    .map(lang => lang.code);
+  // 내 정보 + 언어 + 키워드 조회
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userRes = await axiosInstance.get("/api/users/me");
+        const user = userRes.data;
   
-  const learnLanguages = mockUserData.languages
-    .filter(lang => lang.type === 'LEARN')
-    .map(lang => lang.code);
+        setUserData(user);
+        setLanguages({
+          nativeCodes: user.nativeLanguages || [],
+          learnCodes: user.learnLanguages || [],
+        });
+        setKeywords({
+          personality: user.personalityKeywords || [],
+          hobby: user.hobbyKeywords || [],
+          topic: user.topicKeywords || [],
+        });
+  
+        console.log("내 정보:", user);
+      } catch (error) {
+        console.error("마이페이지 데이터 조회 실패:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUserData();
+  }, []);
+  
+
+  // 프로필 수정
+  const handleProfileSave = async (updatedData: any) => {
+    try {
+      const profileData = {
+        nickname: updatedData.nickname || userData.nickname,
+        infoTitle: updatedData.infoTitle || userData.infoTitle,
+        infoContent: updatedData.infoContent || userData.infoContent,
+        mbti: updatedData.mbti || userData.mbti,
+        campus: updatedData.campus || userData.campus,
+        country: updatedData.country || userData.country,
+      };
+      console.log("📤 PATCH body:", JSON.stringify(profileData, null, 2));
+      await axiosInstance.patch("/api/users/me", profileData);
+  
+      // 언어 수정
+      const nativeArray = (Array.isArray(updatedData.nativeLanguages)
+      ? updatedData.nativeLanguages
+      : updatedData.nativeLanguages
+      ? [updatedData.nativeLanguages]
+      : []
+    ).map((lang: string) => LANGUAGE_REVERSE_MAP[lang] || lang)
+
+
+    const learnArray = (Array.isArray(updatedData.learnLanguages)
+      ? updatedData.learnLanguages
+      : updatedData.learnLanguages
+      ? [updatedData.learnLanguages]
+      : []
+    ).map((lang: string) => LANGUAGE_REVERSE_MAP[lang] || lang)
+
+
+      if (nativeArray.length > 0 || learnArray.length > 0) {
+        await axiosInstance.put("/api/users/me/languages", {
+          nativeCodes: nativeArray,
+          learnCodes: learnArray,
+        });
+        setLanguages({ nativeCodes: nativeArray, learnCodes: learnArray });
+      }
+  
+      // 키워드 수정: 값이 있을 때만 요청 + 상태 반영
+      if (
+        updatedData.personalityKeywords !== undefined ||
+        updatedData.hobbyKeywords !== undefined ||
+        updatedData.topicKeywords !== undefined
+      ){
+        await axiosInstance.put("/api/users/me/keywords", {
+          personality: updatedData.personalityKeywords || [],
+          hobby: updatedData.hobbyKeywords || [],
+          topic: updatedData.topicKeywords || [],
+        });
+  
+        setKeywords({
+          personality: updatedData.personalityKeywords || [],
+          hobby: updatedData.hobbyKeywords || [],
+          topic: updatedData.topicKeywords || [],
+        });
+      }
+  
+      alert("프로필이 성공적으로 수정되었습니다!");
+  
+      setUserData((prev: any) => ({
+      ...prev,
+      nickname: updatedData.nickname ?? prev.nickname,
+      infoTitle: updatedData.infoTitle ?? prev.infoTitle,
+      infoContent: updatedData.infoContent ?? prev.infoContent,
+      mbti: updatedData.mbti ?? prev.mbti,
+      campus: updatedData.campus ?? prev.campus,
+      country: updatedData.country ?? prev.country,
+    }));
+      setIsEditMode(false);
+    } catch (error) {
+      console.error("프로필 수정 실패:", error);
+      alert("프로필 수정 중 오류가 발생했습니다.");
+    }
+  };
+  
 
   return (
     <Container>
       <ContentWrapper>
         <PageTitle className="H1">My Page</PageTitle>
-        
-        <ProfileCard 
-          userId={mockUserData.id}
-          username={mockUserData.username}
-          nickname={mockUserData.profile.nickname}
-          mbti={mockUserData.profile.mbti}
-          country={mockUserData.profile.country}
-          profileImage={mockUserData.profile.profileImage}
-          infoTitle={mockUserData.profile.infoTitle}
-          infoContent={mockUserData.profile.infoContent}
-          keywords={mockUserData.keywords}
 
-          campus={mockUserData.profile.campus}
-          nativeLanguages={nativeLanguages}
-          learnLanguages={learnLanguages}
-          email={mockUserData.email}
+        {!isLoading && userData && (
+          <ProfileCard
+            userId={userData.id}
+            username={userData.username}
+            nickname={userData.nickname}
+            mbti={userData.mbti}
+            country={userData.country}
+            profileImage={userData.profileImageUrl}
+            infoTitle={userData.infoTitle}
+            infoContent={userData.infoContent}
+            keywords={[
+              ...keywords.personality,
+              ...keywords.hobby,
+              ...keywords.topic,
+            ]}
+            campus={userData.campus}
+            nativeLanguages={languages.nativeCodes.map(code => LANGUAGE_MAP[code] || code)}
+            learnLanguages={languages.learnCodes.map(code => LANGUAGE_MAP[code] || code)}
+            email={userData.email}
+            isOwner={true}
+            isEditMode={isEditMode}
+            onEdit={() => setIsEditMode(true)}
+            onSave={handleProfileSave}
+            onCancel={() => setIsEditMode(false)}
+          />
+        )}
 
-          isOwner={true}
-          isEditMode={isEditMode}
-          onEdit={handleProfileEdit}
-          onSave={handleProfileSave}
-          onCancel={handleProfileCancel}
-        />
-        
-        <ActivityTabs 
+        {/* 활동 탭 (게시글, 댓글 등) */}
+        <ActivityTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          posts={mockPosts}
-          comments={mockComments}
+          posts={[]} // 나중에 실제 API 연동
+          comments={[]} // 나중에 실제 API 연동
         />
       </ContentWrapper>
     </Container>
