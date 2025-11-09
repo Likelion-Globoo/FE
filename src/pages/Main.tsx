@@ -73,6 +73,7 @@ const ContentContainer = styled.div`
   //padding-top: 3.44rem;
   //justify-content: center;
   align-items: center;
+  padding-bottom: 2rem;
 `
 
 const ContentTitle = styled.div`
