@@ -6,10 +6,12 @@ import KoreaProfileImg from "../assets/img-profile1-Korea.svg";
 import ItalyProfileImg from "../assets/img-profile1-Italy.svg";
 import EgyptProfileImg from "../assets/img-profile1-Egypt.svg";
 import ChinaProfileImg from "../assets/img-profile1-China.svg";
+import MiniBooImg from "../assets/img-miniBoo.svg";
 
 interface CommentSectionProps {
   studyId: number;
   comments: StudyComment[];
+  currentUserId: number; // 추가: 현재 로그인한 사용자 ID
   onAddComment: (content: string) => void;
   onEditComment: (commentId: number, content: string) => void;
   onDeleteComment: (commentId: number) => void;
@@ -39,16 +41,10 @@ const CommentHeader = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-const CommentIcon = styled.div`
+const CommentIcon = styled.img`
   width: 2rem;
   height: 2rem;
-  background-color: var(--skyblue);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--white);
-  font-size: 1rem;
+  object-fit: contain;
 `;
 
 const CommentTitle = styled.h3`
@@ -172,6 +168,7 @@ const ActionButton = styled.button<{ $variant?: 'delete' | 'edit' }>`
 const CommentSection = ({ 
   studyId, 
   comments, 
+  currentUserId, // 추가: 현재 사용자 ID
   onAddComment, 
   onEditComment, 
   onDeleteComment 
@@ -204,7 +201,7 @@ const CommentSection = ({
   return (
     <CommentContainer>
       <CommentHeader>
-        <CommentIcon>💬</CommentIcon>
+        <CommentIcon src={MiniBooImg} alt="댓글 아이콘" />
         <CommentTitle className="H4">댓글을 작성해주세요!</CommentTitle>
       </CommentHeader>
       
@@ -244,22 +241,25 @@ const CommentSection = ({
                   <CommentAuthor className="H5">{comment.author.nickname}</CommentAuthor>
                   <CommentText className="Body2">{comment.content}</CommentText>
                   
-                  <CommentActions>
-                    <ActionButton 
-                      $variant="delete" 
-                      className="Button2"
-                      onClick={() => handleDeleteComment(comment.id)}
-                    >
-                      삭제하기
-                    </ActionButton>
-                    <ActionButton 
-                      $variant="edit" 
-                      className="Button2"
-                      onClick={() => handleEditComment(comment.id)}
-                    >
-                      수정하기
-                    </ActionButton>
-                  </CommentActions>
+                  {/* 본인이 작성한 댓글만 수정/삭제 버튼 표시 */}
+                  {comment.author.id === currentUserId && (
+                    <CommentActions>
+                      <ActionButton 
+                        $variant="delete" 
+                        className="Button2"
+                        onClick={() => handleDeleteComment(comment.id)}
+                      >
+                        삭제하기
+                      </ActionButton>
+                      <ActionButton 
+                        $variant="edit" 
+                        className="Button2"
+                        onClick={() => handleEditComment(comment.id)}
+                      >
+                        수정하기
+                      </ActionButton>
+                    </CommentActions>
+                  )}
                 </CommentContent>
               </CommentItem>
             ))}

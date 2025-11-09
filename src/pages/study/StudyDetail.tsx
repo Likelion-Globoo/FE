@@ -13,7 +13,7 @@ import ChinaProfileImg from "../../assets/img-profile1-China.svg";
 // 목데이터 - 나중에 API로 교체
 const mockStudyDetail: StudyCardItem = {
   id: 3,
-  title: "중인대상과 함께 배우는 아랍어 교실",
+  title: "융인대생과 함께 배우는 아랍어 교실",
   content: "스터디 부원 모집해요! 스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요 스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요 스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요 스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요 스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요 스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요스터디 부원 모집해요 스터디 부원 모집해요스터디 부원 모집해요",
   status: "모집중",
   campus: "GLOBAL",
@@ -23,7 +23,6 @@ const mockStudyDetail: StudyCardItem = {
   updatedAt: "2025-10-15T00:00:00Z",
   currentParticipants: 11,
   authorId: 3,
-  authorNickname: "홍길동",
   authorProfileImage: null,
   authorCountry: "EG",
   tags: ["아랍어", "이집트"]
@@ -31,7 +30,7 @@ const mockStudyDetail: StudyCardItem = {
 
 const mockComments: StudyComment[] = [
   {
-    id: 1,
+    id: 5,
     postId: 3,
     content: "영어 마침 배워보고 싶었는데 어떻게 참여하나요? 친구랑 같이 참여해보고 싶어요!영어 마침 배워보고 싶었는데 어떻게 참여하나요? 친구랑 같이 참여해보고 싶어요!영어 마침 배워보고 싶었는데 어떻게 참여하나요? 친구랑 같이 참여해보고 싶어요! 친구랑 같이 참여해보고 싶어요!",
     createdAt: "2025-11-08T00:00:00Z",
@@ -64,6 +63,7 @@ const mockUserData = {
   profileImage: null,
   country: "KR"
 };
+// mockUserData의 id와 mockCommetData의 id가 동일하지 않은데 자꾸 첫 댓글에 수정하기 삭제하기 버튼이 나옵니다..api 연결하면서 수정해볼게요
 
 // 국가별 캐릭터 이미지 매핑
 const countryCharacterImages: { [key: string]: string } = {
@@ -172,11 +172,25 @@ const StudyHeader = styled.div`
   margin-bottom: 2rem;
 `;
 
+const StudyAuthorSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 120px;
+`;
+
 const StudyAuthorImage = styled.img`
   width: 80px;
   height: 80px;
   border-radius: 50%;
   object-fit: cover;
+`;
+
+const AuthorName = styled.div`
+  color: var(--black);
+  text-align: center;
+  line-height: 1.3;
 `;
 
 const StudyInfo = styled.div`
@@ -220,15 +234,6 @@ const Tag = styled.span`
 const StudyTitle = styled.h2`
   margin: 0 0 1rem 0;
   color: var(--black);
-`;
-
-const StudyAuthorInfo = styled.div`
-  margin-bottom: 2rem;
-`;
-
-const AuthorName = styled.div`
-  color: var(--black);
-  margin-bottom: 0.5rem;
 `;
 
 const StudyContent = styled.div`
@@ -308,7 +313,7 @@ const StudyDetail = () => {
 
   const handleJoinStudy = () => {
     // 😭 실제 가입 API 호출로 대체
-    alert("스터디에 가입되었습니다!");
+    alert("스터디에 가입되었습니다! 곧 작성자님이 연락드릴 거예요.");
   };
 
   const handleMyPostsClick = () => {
@@ -393,7 +398,7 @@ const StudyDetail = () => {
                 className="Button1"
                 onClick={handleCreatePostClick}
               >
-                📝 게시글 작성
+                게시글 작성
               </ActionButton>
             </ButtonGroup>
           </UserProfileCard>
@@ -404,7 +409,14 @@ const StudyDetail = () => {
           
           <StudyDetailCard>
             <StudyHeader>
-              <StudyAuthorImage src={characterImage} alt={studyData.authorNickname || "작성자"} />
+              <StudyAuthorSection>
+                <StudyAuthorImage src={characterImage} alt="작성자" />
+                {/* 임시로 주석처리 - 백엔드 작성자 API 확인 후 구현
+                <AuthorName className="H4">
+                  작성자 이름 / 닉네임
+                </AuthorName>
+                */}
+              </StudyAuthorSection>
               
               <StudyInfo>
                 <StudyMetaInfo>
@@ -425,10 +437,6 @@ const StudyDetail = () => {
                 </StudyMetaInfo>
                 
                 <StudyTitle className="H2">{studyData.title}</StudyTitle>
-                
-                <StudyAuthorInfo>
-                  <AuthorName className="H4">{studyData.authorNickname} / 멋쟁이</AuthorName>
-                </StudyAuthorInfo>
               </StudyInfo>
             </StudyHeader>
 
@@ -444,6 +452,7 @@ const StudyDetail = () => {
           <CommentSection 
             studyId={parseInt(id!)}
             comments={comments}
+            currentUserId={mockUserData.id} // 누락된 prop 추가! ✅
             onAddComment={handleAddComment}
             onEditComment={handleEditComment}
             onDeleteComment={handleDeleteComment}
