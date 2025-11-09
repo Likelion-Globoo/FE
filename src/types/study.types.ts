@@ -25,6 +25,9 @@ export interface StudyItem {
   createdAt: string;
   updatedAt: string;
 }
+// api 에 스터디 작성자 정보가 포함되어 있지 않아 ui용으로 별도 정의하지 않음
+//  StudyDetail에서 authorUsername: string; 해당 부분(현재는 목데이터) 주석처리함
+
 
 // 스터디 리스트 응답 (GET /api/studies)
 export interface StudyListResponse {
