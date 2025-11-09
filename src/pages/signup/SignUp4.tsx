@@ -231,6 +231,11 @@ const VerificationButton = styled.div`
   background-color: var(--primary);
   color: var(--white);
 `
+const ButtonWraaper = styled.div`
+display: flex;
+flex-direction: row;
+gap: 2rem;
+`
 
 const SignUp4 = () => {
 
@@ -328,7 +333,28 @@ const SignUp4 = () => {
     }
   };
   
-  
+
+const handleResendCode = async () => {
+  try {
+    const resendData = {
+      email: signupData.email, 
+    };
+
+    console.log("인증번호 재전송 요청 데이터:", resendData);
+
+    const res = await axiosInstance.post("/api/auth/verification/resend", resendData);
+
+    if (res.data.ok) {
+      alert("인증번호가 재전송되었습니다. 메일함을 다시 확인해주세요!");
+    } else {
+      alert("재전송에 실패했습니다. 다시 시도해주세요.");
+    }
+  } catch (error: any) {
+    console.error("인증번호 재전송 실패:", error.response?.data || error.message || error);
+    alert(error.response?.data?.message || "인증번호 재전송 중 오류가 발생했습니다.");
+  }
+};
+
 
   return (
     <Container>
@@ -460,9 +486,15 @@ const SignUp4 = () => {
               />
           </CodeInputBox>
 
-          <VerificationButton className="Button2" onClick={handleVerifyCode}>
-            인증번호 확인
-          </VerificationButton>
+          <ButtonWraaper>
+            <VerificationButton className="Button2" onClick={handleVerifyCode}>
+              인증번호 확인
+            </VerificationButton>
+            <VerificationButton className="Button2" onClick={handleResendCode} >
+              인증번호 재전송
+            </VerificationButton>
+          </ButtonWraaper>
+
         </CodeInputContainer>
       </ModalContainer>
       )}
