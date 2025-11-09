@@ -36,7 +36,7 @@ const mockComments: StudyComment[] = [
     createdAt: "2025-11-08T00:00:00Z",
     updatedAt: "2025-11-08T00:00:00Z",
     author: {
-      id: 1,
+      id: 3,
       nickname: "닉네임동백",
       profileImageUrl: null
     }
@@ -63,7 +63,6 @@ const mockUserData = {
   profileImage: null,
   country: "KR"
 };
-// mockUserData의 id와 mockCommetData의 id가 동일하지 않은데 자꾸 첫 댓글에 수정하기 삭제하기 버튼이 나옵니다..api 연결하면서 수정해볼게요
 
 // 국가별 캐릭터 이미지 매핑
 const countryCharacterImages: { [key: string]: string } = {

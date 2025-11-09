@@ -10,8 +10,8 @@ import MiniBooImg from "../assets/img-miniBoo.svg";
 
 interface CommentSectionProps {
   studyId: number;
-  comments: StudyComment[];
-  currentUserId: number; // 추가: 현재 로그인한 사용자 ID
+  comments: StudyComment[]; // 누락된 prop 추가
+  currentUserId: number; // 오타 수정 (commegnt → current)
   onAddComment: (content: string) => void;
   onEditComment: (commentId: number, content: string) => void;
   onDeleteComment: (commentId: number) => void;
