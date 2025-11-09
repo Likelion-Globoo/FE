@@ -35,7 +35,7 @@ function App() {
     <>
       <GlobalStyle />
 
-      <SignupProvider> {/* ✅ App 전체를 감쌈 */}
+      <SignupProvider> 
         {location.pathname !== "/login" && location.pathname !== "/" && <Header />}
 
         <Routes>
@@ -45,17 +45,14 @@ function App() {
           <Route path="/message" element={<Message />} />
           <Route path="/random-match" element={<RandomMatch />} />
 
-          {/* ✅ 회원가입 단계 */}
           <Route path="/signup/step1" element={<SignUp1 />} />
           <Route path="/signup/step3" element={<SignUp3 />} />
           <Route path="/signup/step4" element={<SignUp4 />} />
 
-          {/* ✅ 스터디 */}
           <Route path="/study" element={<StudyList />} />
           <Route path="/study/:id" element={<StudyDetail />} />
           <Route path="/study/post" element={<StudyPost />} />
 
-          {/* ✅ 프로필 */}
           <Route path="/profile" element={<ProfileList />} />
           <Route path="/profile/:id" element={<ProfileDetail />} />
         </Routes>
