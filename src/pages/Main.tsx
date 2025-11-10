@@ -147,6 +147,7 @@ const Main = () => {
   const handleStartMatching = async () => {
     try {
       const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("accessToken");
   
       if (!userId) {
         alert("로그인 후 이용해주세요!");
@@ -154,22 +155,27 @@ const Main = () => {
         return;
       }
   
-      const response = await axiosInstance.post("/api/matching/queue", {
-        userId: Number(userId),
+      const response = await axiosInstance.post(
+        "/api/matching/queue",
+        { userId: Number(userId) }, 
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      console.log("매칭 대기열 등록 성공:", response.data);
+  
+      navigate("/random-match", {
+        state: { matchStatus: "WAITING", userId: Number(userId) },
       });
-  
-      const result = response.data.data;
-      console.log("매칭 결과:", result);
-  
-      navigate("/random-match", { state: { matchStatus: result } });
-  
-    } catch (error: any) {
-      console.error("매칭 요청 오류:", error);
-      alert("매칭 대기열 진입 중 오류가 발생했습니다.");
+    } catch (error) {
+      console.error("매칭 요청 실패:", error);
+      alert("매칭 요청 중 오류가 발생했습니다.");
     }
   };
-  
-
 
   return (
     <Container>

@@ -2,6 +2,7 @@ import styled from "styled-components";
 import Logo from "../assets/logo.svg";
 import GlobalStyle from '../styles/GlobalStyle';
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../../axiosInstance";
 
 const Container = styled.div`
   width: 100vw;
@@ -44,12 +45,37 @@ export default function Header() {
 
   const navigate = useNavigate();
 
+  const handleStartMatching = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+  
+      if (!userId) {
+        alert("로그인 후 이용해주세요!");
+        navigate("/login");
+        return;
+      }
+  
+      const response = await axiosInstance.post("/api/matching/queue", {
+        userId: Number(userId),
+      });
+  
+      const result = response.data.data;
+      console.log("매칭 결과:", result);
+  
+      navigate("/random-match", { state: { matchStatus: result } });
+  
+    } catch (error: any) {
+      console.error("매칭 요청 오류:", error);
+      alert("매칭 대기열 진입 중 오류가 발생했습니다.");
+    }
+  };
+
   return(
     <Container>
       <HeaderLogo src={Logo} alt="logo" onClick={() => navigate("/")}/>
       <Menu>
         <MenuItem onClick={() => navigate("/")}>홈</MenuItem>
-        <MenuItem onClick={() => navigate("/random-match")}>랜덤 매칭</MenuItem>
+        <MenuItem onClick={handleStartMatching}>랜덤 매칭</MenuItem>
         <MenuItem onClick={() => navigate("/study")}>스터디 모집</MenuItem>
         <MenuItem onClick={() => navigate("/profile")}>프로필 조회</MenuItem>
         <MenuItem onClick={() => navigate("/message")}>대화방</MenuItem>
