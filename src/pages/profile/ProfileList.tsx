@@ -1,19 +1,17 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
-import ProfileBanner from '../../components/ProfileBanner';
+import React, { useEffect, useState } from "react";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import ProfileBanner from "../../components/ProfileBanner";
 import HeaderImg from "../../assets/img-miniBoo.svg";
+import axiosInstance from "../../../axiosInstance";
 
-// import { ProfileCardItem, ProfileListResponse } from '../../types/profile.types';
-
-// 😭 임시 타입 (API 연동 시 위 주석 해제하고 아래 삭제)
-type Campus = 'SEOUL' | 'GLOBAL';
+type Campus = "SEOUL" | "GLOBAL";
 type LanguageCode = string;
 type CountryCode = string;
 
-interface LanguagePair {
-  native: LanguageCode[];
-  learn: LanguageCode[];
+interface Language {
+  code: string;
+  name: string;
 }
 
 export interface ProfileCardItem {
@@ -23,79 +21,12 @@ export interface ProfileCardItem {
   country: CountryCode | null;
   mbti: string | null;
   profileImage: string | null;
-  languages: LanguagePair;
-  keywords: string[];
-  intro: string | null;
+  nativeLanguages: Language[];
+  learnLanguages: Language[];
+  keywords: { id: number; name: string }[];
+  infoTitle: string | null;
+  infoContent: string | null;
 }
-
-// 목데이터 - API 명세서 형식 (ProfileCardRes)
-// 😭 API 연동 시 삭제하기
-const BASE_PROFILES: ProfileCardItem[] = [
-  { 
-    userId: 1, 
-    nickname: '왕길동쓰', 
-    campus: 'GLOBAL', 
-    country: 'KR', 
-    languages: { native: ['ko'], learn: ['en'] },
-    mbti: 'ENFP', 
-    keywords: ['긍정적', '운동', '음악', '여행'], 
-    intro: '"저는 운동과 음악을 좋아하는 학생인데 저와 비슷한 분 찾아봐요 ㅎㅎ"\n멋사 친구들과 함께 개발하는 걸 좋아하고, 번개 모임도 대환영합니다 ㅎㅎ 잘 부탁드려요!', 
-    profileImage: null 
-  },
-  { 
-    userId: 2, 
-    nickname: 'Justin M.', 
-    campus: 'SEOUL', 
-    country: 'US', 
-    languages: { native: ['en'], learn: ['ko'] },
-    mbti: 'ISTJ', 
-    keywords: ['개발', '독서', '여행'], 
-    intro: '"저는 운동과 음악을 좋아하는 학생인데 저와 비슷한 분 찾아봐요 ㅎㅎ"\nA highly motivated individual looking for a study buddy. I enjoy learning new languages and meeting people from different cultures.', 
-    profileImage: null 
-  },
-  { 
-    userId: 3, 
-    nickname: 'Chiara R.', 
-    campus: 'GLOBAL', 
-    country: 'IT', 
-    languages: { native: ['it'], learn: ['ko', 'en'] },
-    mbti: 'INFP', 
-    keywords: ['요리', '미술', '커피'], 
-    intro: '"저는 운동과 음악을 좋아하는 학생인데 저와 비슷한 분 찾아봐요 ㅎㅎ"\nCiao! 이탈리아 문화에 관심 있는 친구를 찾아요. 함께 언어 교환하며 문화도 나눠요.', 
-    profileImage: null 
-  },
-  { 
-    userId: 4, 
-    nickname: 'Ramses', 
-    campus: 'SEOUL', 
-    country: 'EG', 
-    languages: { native: ['ar'], learn: ['ko'] },
-    mbti: 'ENTP', 
-    keywords: ['토론', '역사', '여행'], 
-    intro: '"저는 운동과 음악을 좋아하는 학생인데 저와 비슷한 분 찾아봐요 ㅎㅎ"\n한국어 공부에 열심인 이집트 학생입니다. 환영합니다! 역사와 문화 이야기를 나누고 싶어요.', 
-    profileImage: null 
-  },
-  { 
-    userId: 5, 
-    nickname: 'Li Wei', 
-    campus: 'GLOBAL', 
-    country: 'CN', 
-    languages: { native: ['zh'], learn: ['ko', 'en'] },
-    mbti: 'ENFJ', 
-    keywords: ['음식', '여행', '사진'], 
-    intro: '"저는 운동과 음악을 좋아하는 학생인데 저와 비슷한 분 찾아봐요 ㅎㅎ"\n중국 문화와 한국 문화를 나누고 싶어요! 맛있는 음식과 여행 이야기를 좋아합니다.', 
-    profileImage: null 
-  },
-];
-
-const DUMMY_PROFILES: ProfileCardItem[] = [
-  ...BASE_PROFILES,
-  ...Array(3).fill(BASE_PROFILES).flat().map((p, i) => ({
-    ...p, 
-    userId: p.userId + i + 5,
-    nickname: `${p.nickname} (${i+1})`
-  }))
-];
 
 const PageContainer = styled.div`
   max-width: 1200px;
@@ -103,29 +34,23 @@ const PageContainer = styled.div`
   padding: 40px 24px;
 `;
 
-// 헤더 영역: 텍스트와 이미지를 가로로 배치
 const HeaderSection = styled.div`
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   margin-bottom: 30px;
   gap: 20px;
 `;
 
-// 왼쪽: 제목 + 부제목
 const HeaderTextArea = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0px;
 `;
 
-// 오른쪽: 이미지
 const HeaderImage = styled.img`
   width: 60px;
   height: 60px;
   object-fit: contain;
-  flex-shrink: 
-  `;
+`;
 
 const HeaderTitle = styled.h2`
   font-size: 2rem;
@@ -150,11 +75,6 @@ const FilterSection = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
-  }
 `;
 
 const FilterPlaceholder = styled.div`
@@ -181,15 +101,10 @@ const SearchButton = styled.button`
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95rem;
-  white-space: nowrap;
   transition: background-color 0.2s;
 
   &:hover {
     background-color: var(--primary-dark);
-  }
-
-  &:active {
-    transform: scale(0.98);
   }
 `;
 
@@ -200,15 +115,13 @@ const SectionTitle = styled.h3`
   margin-bottom: 20px;
 `;
 
-// 🔥 핵심 수정: 한 행에 정확히 2개씩 배치
 const ProfileGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 항상 2열 */
-  gap: 24px; /* 25px → 24px */
-  margin-bottom: 60px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr; /* 모바일에서는 1열*/
+    grid-template-columns: 1fr;
     gap: 20px;
   }
 `;
@@ -224,93 +137,106 @@ const PaginationContainer = styled.div`
 const PageButton = styled.button<{ $active?: boolean }>`
   padding: 8px 12px;
   min-width: 36px;
-  border: 1px solid ${props => props.$active ? 'var(--primary)' : 'var(--gray-300)'};
-  background-color: ${props => props.$active ? 'var(--primary)' : 'var(--white)'};
-  color: ${props => props.$active ? 'var(--white)' : 'var(--primary)'};
+  border: 1px solid ${(props) => (props.$active ? "var(--primary)" : "var(--gray-300)")};
+  background-color: ${(props) => (props.$active ? "var(--primary)" : "var(--white)")};
+  color: ${(props) => (props.$active ? "var(--white)" : "var(--primary)")};
   border-radius: 6px;
   cursor: pointer;
-  font-weight: ${props => props.$active ? '600' : '400'};
+  font-weight: ${(props) => (props.$active ? "600" : "400")};
   transition: all 0.2s;
 `;
 
 const ProfileList: React.FC = () => {
   const navigate = useNavigate();
-  const [profiles] = useState<ProfileCardItem[]>(DUMMY_PROFILES);
-  const [currentPage, setCurrentPage] = useState(1);
-  const profilesPerPage = 8; // 한 페이지에 8개 (2열 × 4행)
+  const [profiles, setProfiles] = useState<ProfileCardItem[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const profilesPerPage = 8;
 
-  // 페이지네이션 계산(필요없으면 빼기)
-  const indexOfLastProfile = currentPage * profilesPerPage;
-  const indexOfFirstProfile = indexOfLastProfile - profilesPerPage;
-  const currentProfiles = profiles.slice(indexOfFirstProfile, indexOfLastProfile);
-  const totalPages = Math.ceil(profiles.length / profilesPerPage);
+  // 필터 없이 전체 조회
+  const fetchProfiles = async (page = 0) => {
+    try {
+      const res = await axiosInstance.get("/api/profiles", {
+        params: { page, size: profilesPerPage },
+      });
+      setProfiles(res.data.content);
+      setTotalPages(res.data.totalPages);
+      console.log("프로필 불러오기 성공:", res.data);
+    } catch (error) {
+      console.error("프로필 조회 실패:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfiles(currentPage);
+  }, [currentPage]);
 
   const handleProfileClick = (userId: number) => {
-    navigate(`/profile/${userId}`); // 프로필 상세 페이지로 이동
+    navigate(`/profile/${userId}`);
   };
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <PageContainer>
       <HeaderSection>
-        <HeaderImage src={HeaderImg} alt="프로필 조회" />        
+        <HeaderImage src={HeaderImg} alt="프로필 조회" />
         <HeaderTextArea>
-          <HeaderTitle className="H5">프로필 조회</HeaderTitle>
-          <SubText className="H4">나와 Fit이 맞는 친구 찾기</SubText>
+          <HeaderTitle>프로필 조회</HeaderTitle>
+          <SubText>나와 Fit이 맞는 친구 찾기</SubText>
         </HeaderTextArea>
       </HeaderSection>
 
       <FilterSection>
-        <FilterPlaceholder className='H5'>
+        <FilterPlaceholder>
           <span>캠퍼스</span>
           <span>사용 언어</span>
           <span>키워드</span>
         </FilterPlaceholder>
-        <SearchButton>조회</SearchButton>
+        <SearchButton onClick={() => fetchProfiles(0)}>조회</SearchButton>
       </FilterSection>
 
-      <SectionTitle className='H4'>친구들의 프로필 보기</SectionTitle>
+      <SectionTitle>친구들의 프로필 보기</SectionTitle>
 
       <ProfileGrid>
-        {currentProfiles.map((profile) => (
-          <ProfileBanner 
+        {profiles.map((profile) => (
+          <ProfileBanner
             key={profile.userId}
-            {...profile}
+            userId={profile.userId}
+            nickname={profile.nickname}
+            campus={profile.campus}
+            country={profile.country}
+            mbti={profile.mbti}
+            profileImage={profile.profileImage}
+            languages={{
+              native: profile.nativeLanguages.map((l) => l.code),
+              learn: profile.learnLanguages.map((l) => l.code),
+            }}
+            keywords={profile.keywords.map((k) => k.name)}
+            intro={
+              profile.infoTitle && profile.infoContent
+                ? `${profile.infoTitle}\n${profile.infoContent}`
+                : ""
+            }
             onClick={() => handleProfileClick(profile.userId)}
           />
         ))}
       </ProfileGrid>
 
-      {/* 페이지네이션 */}
       {totalPages > 1 && (
         <PaginationContainer>
-          <PageButton 
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            ‹
-          </PageButton>
-          
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+          {Array.from({ length: totalPages }, (_, i) => (
             <PageButton
-              key={pageNum}
-              $active={currentPage === pageNum}
-              onClick={() => handlePageChange(pageNum)}
+              key={i}
+              $active={currentPage === i}
+              onClick={() => handlePageChange(i)}
             >
-              {pageNum}
+              {i + 1}
             </PageButton>
           ))}
-          
-          <PageButton 
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            ›
-          </PageButton>
         </PaginationContainer>
       )}
     </PageContainer>
