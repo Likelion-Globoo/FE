@@ -54,7 +54,7 @@ function App() {
           <Route path="/study/post" element={<StudyPost />} />
 
           <Route path="/profile" element={<ProfileList />} />
-          <Route path="/profile/:id" element={<ProfileDetail />} />
+          <Route path="/profile/:userId" element={<ProfileDetail />} />
         </Routes>
       </SignupProvider>
     </>

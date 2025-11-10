@@ -3,23 +3,8 @@ import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import ProfileCard from "../../components/ProfileCard";
 import { type ProfileDetailResponse } from "../../types/mypage&profile.types";
+import axiosInstance from "../../../axiosInstance";
 
-// 목 데이터 (타인 프로필)
-const mockOtherUserData: ProfileDetailResponse = {
-  userId: 22,
-  nickname: "왕마오",
-  campus: "GLOBAL",
-  country: "KR",
-  mbti: "ENFP",
-  keywords: ["운동", "음악", "여행"],
-  profileImage: null,
-  introTitle: "힘드러요.,",
-  introContent: "친구들 좋아해요",
-  languages: {
-    native: ["일본어"],
-    learn: ["한국어"]
-  }
-};
 
 const Container = styled.div`
   width: 100%;
@@ -94,13 +79,66 @@ const MessageButton = styled.button`
 const ProfileDetail = () => {
   const { userId } = useParams<{ userId: string }>();
   const [userData, setUserData] = useState<ProfileDetailResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    //😭실제 API 호출로 대체 필요
-
-    setUserData(mockOtherUserData);
+    const fetchProfileDetail = async () => {
+      try {
+        if (!userId) {
+          console.warn("userId가 없습니다. useParams() 확인 필요.");
+          return;
+        }
+  
+        console.log(`프로필 상세 요청 시작: /api/profiles/${userId}`);
+  
+        const res = await axiosInstance.get(`/api/profiles/${userId}`);
+        const data = res.data;
+        console.log("프로필 불러오기 성공:", data);
+  
+        // ✅ BASE_URL 정의 (여기서 불러옴)
+        const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  
+        // ✅ 슬래시 중복 자동 제거
+        const cleanBaseUrl = BASE_URL.endsWith("/")
+          ? BASE_URL.slice(0, -1)
+          : BASE_URL;
+  
+        // ✅ /uploads로 시작하는 경로만 서버 URL 붙이기
+        const profileImageUrl =
+          data.profileImage && data.profileImage.startsWith("/uploads")
+            ? `${cleanBaseUrl}${data.profileImage}`
+            : data.profileImage;
+  
+        // ✅ 데이터 변환
+        const formattedData: ProfileDetailResponse = {
+          userId: data.userId,
+          nickname: data.nickname,
+          campus: data.campus,
+          country: data.country,
+          mbti: data.mbti,
+          profileImage: profileImageUrl, // 여기서 교체된 이미지 URL 사용
+          introTitle: data.infoTitle,
+          introContent: data.infoContent,
+          keywords: data.keywords.map((k: any) => k.name),
+          languages: {
+            native: data.nativeLanguages.map((l: any) => l.name),
+            learn: data.learnLanguages.map((l: any) => l.name),
+          },
+        };
+  
+        setUserData(formattedData);
+      } catch (error) {
+        console.error("프로필 상세 조회 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchProfileDetail();
   }, [userId]);
+  
+  
 
   const handleSendMessage = () => {
     console.log("메시지 전송:", message);
@@ -109,11 +147,21 @@ const ProfileDetail = () => {
     setMessage("");
   };
 
-  if (!userData) {
+  if (loading) {
     return (
       <Container>
         <ContentWrapper>
           <div className="Body1">로딩 중...</div>
+        </ContentWrapper>
+      </Container>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <Container>
+        <ContentWrapper>
+          <div className="Body1">프로필 정보를 불러올 수 없습니다.</div>
         </ContentWrapper>
       </Container>
     );
@@ -124,8 +172,7 @@ const ProfileDetail = () => {
       <ContentWrapper>
         <PageTitle className="H1">프로필 조회</PageTitle>
         
-        {/* 타인 프로필: isOwner={false} */}
-        <ProfileCard 
+        <ProfileCard
           userId={userData.userId}
           nickname={userData.nickname}
           mbti={userData.mbti}
@@ -134,11 +181,10 @@ const ProfileDetail = () => {
           infoTitle={userData.introTitle}
           infoContent={userData.introContent}
           keywords={userData.keywords}
-          
           campus={userData.campus}
           nativeLanguages={userData.languages.native}
           learnLanguages={userData.languages.learn}
-          isOwner={false}  //수정 버튼 없음
+          isOwner={false}
         />
         
 
