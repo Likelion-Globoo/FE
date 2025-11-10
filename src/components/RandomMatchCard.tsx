@@ -1,8 +1,7 @@
 import styled, { keyframes } from "styled-components";
-import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
 import MockImg from "../assets/main-character.svg";
-import { IoIosLogOut } from "react-icons/io";
 import axiosInstance from "../../axiosInstance";
 
 const Wrapper = styled.div`
@@ -114,37 +113,6 @@ const ProfileName = styled.div`
   padding-top: 1.12rem;
 `;
 
-const LanguageBox = styled.div`
-  padding-top: 0.94rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.87rem;
-`;
-
-const LanguageContent = styled.div`
-  font-size: 1rem;
-  text-align: center;
-`;
-
-const KeywordContainer = styled.div`
-  display: grid;
-  padding-top: 1.94rem;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem 1.94rem;
-  justify-content: center;
-  margin: 0 auto;
-`;
-
-const KeywordBox = styled.div`
-  display: flex;
-  width: 5.69rem;
-  height: 2.13rem;
-  border-radius: 3.125rem;
-  background: var(--white);
-  justify-content: center;
-  align-items: center;
-`;
-
 const ButtonContainer = styled.div`
   display: flex;
   gap: 1.06rem;
@@ -167,57 +135,53 @@ const Button = styled.div`
 
 export default function RandomMatchCard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const userId = location.state?.userId || Number(localStorage.getItem("userId"));
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const [stage, setStage] = useState<"loading" | "matched" | "chat">("loading");
-  const [partner, setPartner] = useState<any>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
-  const userId = Number(localStorage.getItem("userId"));
-  let interval: NodeJS.Timeout;
 
-  // 대기열 진입 함수
-  const enterMatching = async () => {
-    try {
-      const res = await axiosInstance.post("/api/matching/queue", { userId });
-      const data = res?.data;
-      console.log("대기열 응답:", data);
+  // 매칭 상태 확인 (폴링만 수행)
+  useEffect(() => {
+    if (!userId) return;
 
-      // WAITING or FOUND 분기
-      if (data.status === "FOUND") {
-        setStage("matched");
-        setPartner(data.partner);
-        setMatchId(data.matchId);
-      } else if (data.status === "WAITING" || data.status === "ACCEPTED_ONE") {
-        interval = setInterval(async () => {
-          try {
-            const check = await axiosInstance.get(`/api/matching/active/${userId}`);
-            const state = check?.data;
-            console.log("매칭 상태:", state);
+    intervalRef.current = setInterval(async () => {
+      try {
+        const res = await axiosInstance.get(`/api/matching/active/${userId}`);
+        const data = res.data;
+        console.log("매칭 상태:", data);
 
-            if (state?.status === "FOUND") {
-              clearInterval(interval);
-              setStage("matched");
-              setPartner(state.partner);
-              setMatchId(state.matchId);
-            } else if (state?.status === "ACCEPTED_ONE") {
-              console.log("상대방이 이미 수락한 상태입니다.");
-              setMatchId(state.matchId);
-            }
-          } catch (err) {
-            console.error("매칭 상태 확인 중 오류:", err);
-          }
-        }, 3000);
+        if (data.status === "FOUND" || data.status === "ACCEPTED_ONE") {
+          clearInterval(intervalRef.current!);
+          setStage("matched");
+          setMatchId(data.matchId);
+        }
+      } catch (err) {
+        console.error("매칭 상태 확인 오류:", err);
       }
-    } catch (error) {
-      console.error("매칭 진입 오류:", error);
-    }
-  };
+    }, 1000);
 
-  // 수락
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [userId]);
+
+  // 매칭 수락
   const handleAcceptMatch = async () => {
     if (!matchId) return alert("매칭 정보가 없습니다.");
     try {
-      await axiosInstance.post(`/api/matching/${matchId}/accept`, { userId });
+      await axiosInstance.post(
+        `/api/matching/${matchId}/accept`,
+        JSON.stringify({ userId }),
+        {
+          headers: { "Content-Type": "application/json" },
+          transformRequest: [(data) => data],
+        }
+      );
       console.log("매칭 수락 완료");
       setStage("chat");
+      navigate(`/chat/${matchId}`);
     } catch (error) {
       console.error("매칭 수락 실패:", error);
       alert("채팅 시작 중 오류가 발생했습니다.");
@@ -229,13 +193,8 @@ export default function RandomMatchCard() {
     try {
       await axiosInstance.delete("/api/matching/queue", { data: { userId } });
       console.log("기존 대기열 삭제 완료");
-
       setStage("loading");
-      setPartner(null);
       setMatchId(null);
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      await enterMatching();
     } catch (error) {
       console.error("다른 상대 찾기 오류:", error);
       alert("다른 상대를 찾는 중 오류가 발생했습니다.");
@@ -254,25 +213,6 @@ export default function RandomMatchCard() {
     }
   };
 
-  // 컴포넌트 마운트/언마운트 처리
-  useEffect(() => {
-    enterMatching();
-    return () => {
-      if (interval) clearInterval(interval);
-      axiosInstance.delete("/api/matching/queue", { data: { userId } });
-    };
-  }, [userId]);
-
-  const languageMap: Record<string, string> = {
-    ja: "일본어",
-    ko: "한국어",
-  };
-
-  const countryMap: Record<string, string> = {
-    KR: "한국",
-    JP: "일본",
-  };
-
   return (
     <Wrapper>
       <ColorBackground stage={stage} />
@@ -287,28 +227,12 @@ export default function RandomMatchCard() {
           </>
         )}
 
-        {stage === "matched" && partner && (
+        {stage === "matched" && (
           <>
             <MatchedTitle>매칭에 성공했습니다!</MatchedTitle>
             <MatchedProfile>
-              <ProfileImg src={partner.profileImage || MockImg} alt="프로필 이미지" />
-              <ProfileName>{partner.nickname}</ProfileName>
-              <LanguageBox>
-                <LanguageContent>
-                  사용 언어: {languageMap[partner.nativeLanguages?.[0]]}
-                </LanguageContent>
-                <LanguageContent>
-                  선호 언어: {languageMap[partner.learnLanguages?.[0]]}
-                </LanguageContent>
-                <LanguageContent>
-                  국적: {countryMap[partner.country]}
-                </LanguageContent>
-              </LanguageBox>
-              <KeywordContainer>
-                {[...(partner.keywords || []), partner.mbti].map((word, idx) => (
-                  <KeywordBox key={idx}>#{word}</KeywordBox>
-                ))}
-              </KeywordContainer>
+              <ProfileImg src={MockImg} alt="프로필 이미지" />
+              <ProfileName>상대방을 찾았습니다</ProfileName>
               <ButtonContainer>
                 <Button onClick={handleAcceptMatch}>채팅 시작하기</Button>
                 <Button onClick={handleFindAnother}>다른 상대 찾기</Button>
