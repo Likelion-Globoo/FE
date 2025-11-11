@@ -103,6 +103,7 @@ const SubmitButton = styled.div`
   background-color: var(--primary);
   color: var(--white);
   border-radius: 0.75rem;
+  cursor: pointer;
 `
 
 const SignUpContent = styled.div`
