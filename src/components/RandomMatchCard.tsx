@@ -605,7 +605,11 @@ const sendMessage = () => {
 
             <MessageHeader>
             <MessageProfile
-              src={partner?.profileImageUrl || MockImg}
+              src={
+                partner?.profileImageUrl ||
+                countryCharacterImages[partner?.country] ||
+                MockImg
+              }
               alt="프로필 이미지"
             />
               <NicnameContent>{partner?.nickname} 님이 입장하셨습니다.</NicnameContent>
