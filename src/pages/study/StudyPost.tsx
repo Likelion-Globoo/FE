@@ -1,18 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { StudyRequest } from "../../types/study.types";
+import { createStudy, handleApiError } from "../../api/studyAPI";
+import type {UserMeResponse } from "../../types/mypage&profile.types";
+import axiosInstance from "../../../axiosInstance";
 
-// 현재 사용자 목데이터
-const mockUserData = {
-  id: 1,
-  username: "홍길동",
-  nickname: "멋쟁이",
-  email: "likelion@hufs.ac.kr",
-  profileImage: null,
-  country: "KR"
+const fetchUserMe = async (): Promise<UserMeResponse | null> => {
+    try {
+        const response = await axiosInstance.get<UserMeResponse>('/api/users/me');
+        return response.data;
+    } catch (error) {
+        console.error("내 정보 조회 실패 (인증 문제일 수 있으니 확인하셔요):", error);
+        return null;
+    }
 };
-
 const Container = styled.div`
   width: 100%;
   min-height: 100vh;
@@ -205,18 +207,30 @@ const SubmitButton = styled.button`
 
 const StudyPost = () => {
   const navigate = useNavigate();
+  const [userMe, setUserMe] = useState<UserMeResponse | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
   
   const [formData, setFormData] = useState<StudyRequest>({
     title: "",
     content: "",
     status: "모집중",
-    campus: "",
+    campus: "" as 'SEOUL' | 'GLOBAL' | '',
     language: "",
-    capacity: 10
+    capacity: 2
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadUserMe = async () => {
+        setIsUserLoading(true);
+        const data = await fetchUserMe();
+        setUserMe(data);
+        setIsUserLoading(false);
+    };
+    loadUserMe();
+  }, []);
 
   const handleInputChange = (field: keyof StudyRequest, value: string | number) => {
     setFormData(prev => ({
@@ -252,8 +266,8 @@ const StudyPost = () => {
       newErrors.language = "사용언어를 선택해주세요";
     }
     
-    if (formData.capacity < 2 || formData.capacity > 50) {
-      newErrors.capacity = "최대인원은 2~50명 사이여야 합니다";
+    if (formData.capacity < 2 || formData.capacity > 6) {
+      newErrors.capacity = "최대인원은 2~6명 사이여야 합니다";
     }
 
     setErrors(newErrors);
@@ -265,31 +279,35 @@ const StudyPost = () => {
       return;
     }
 
+    if (!userMe) {
+        alert('게시글 작성을 위해 로그인이 필요합니다.');
+        navigate('/login'); 
+        return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // 😭 실제 API 호출 (POST /api/studies)
-      // const response = await fetch('/api/studies', {
-      //   method: 'POST',
-      //   headers: { 
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${accessToken}`
-      //   },
-      //   body: JSON.stringify(formData)
-      // });
-      // const result = await response.json();
-      
-      console.log("게시글 작성:", formData);
-      alert(`"${formData.title}" 게시글이 성공적으로 작성되었습니다!`);
-      navigate('/study');
-      
+     const response = await createStudy(formData);
+
+    console.log("게시글 작성 성공:", response);
+      const newPostId = response.data?.id;
+    alert(`"${formData.title}" 게시글이 성공적으로 작성되었습니다!`);
+      if (newPostId) {
+          navigate(`/study/${newPostId}`);
+      } else {
+        console.error("API 응답에서 새로운 게시글 ID를 찾을 수 없습니다:", response);
+        navigate('/study');
+      }
+
     } catch (error) {
-      console.error('게시글 작성 실패:', error);
-      alert('게시글 작성에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    const errorMessage = handleApiError(error);
+    console.error('게시글 작성 실패:', error);
+    alert(`게시글 작성에 실패했습니다: ${errorMessage}`);
+   } finally {
+     setIsSubmitting(false);
+  }
+};
 
   const handleMyPostsClick = () => {
     navigate("/mypage");
@@ -308,51 +326,61 @@ const StudyPost = () => {
                      formData.campus && 
                      formData.language &&
                      formData.capacity >= 2 && 
-                     formData.capacity <= 50;
+                     formData.capacity <= 6;
 
   return (
     <Container>
       <ContentWrapper>
         <LeftPanel>
           <UserProfileCard>
-            <ProfileImage 
-              src={mockUserData.profileImage || "/placeholder-profile.png"} 
-              alt="프로필"
-            />
-            <UserInfo>
-              <UserName className="H4">
-                {mockUserData.username} / {mockUserData.nickname}
-              </UserName>
-              <UserEmail className="Body2">
-                {mockUserData.email}
-              </UserEmail>
-            </UserInfo>
-            <ButtonGroup>
-              <ActionButton 
-                $variant="secondary" 
-                className="Button1"
-                onClick={handleMyPostsClick}
-              >
-                작성한 게시글
-              </ActionButton>
-              <ActionButton 
-                $variant="secondary" 
-                className="Button1"
-                onClick={handleMyCommentsClick}
-              >
-                작성한 댓글
-              </ActionButton>
-              <ActionButton 
-                $variant="primary" 
-                className="Button1"
-                onClick={handleBackToList}
-              >
-                스터디 목록
-              </ActionButton>
-            </ButtonGroup>
-          </UserProfileCard>
+            {/* 💡 5. 사용자 정보 표시 로직 */}
+            {isUserLoading ? (
+                <p>사용자 정보 로딩 중...</p>
+            ) : userMe ? (
+                <>
+                <ProfileImage 
+                    src={userMe.profileImageUrl || "/placeholder-profile.png"} 
+                    alt="프로필"
+                />
+                <UserInfo>
+                    <UserName className="H4">
+                        {userMe.name} / {userMe.nickname}
+                    </UserName>
+                    <UserEmail className="Body2">
+                        {userMe.email}
+                    </UserEmail>
+                </UserInfo>
+                </>
+            ) : (
+                <p>로그인이 필요합니다.</p>
+            )}
+
+            <ButtonGroup>
+              <ActionButton 
+                $variant="secondary" 
+                className="Button1"
+                onClick={handleMyPostsClick}
+              >
+                작성한 게시글
+              </ActionButton>
+              <ActionButton 
+                $variant="secondary" 
+                className="Button1"
+                onClick={handleMyCommentsClick}
+              >
+                작성한 댓글
+              </ActionButton>
+              <ActionButton 
+                $variant="primary" 
+                className="Button1"
+                onClick={handleBackToList}
+              >
+                스터디 목록
+              </ActionButton>
+            </ButtonGroup>
+          </UserProfileCard>
         </LeftPanel>
-{/*StudyPost에서는 게시글ㄹ 작성 버튼이 아닌, 스터디 목록 ㅓ튼으로 변경*/}
+
         <RightPanel>
           <PageTitle className="H1">게시글 작성</PageTitle>
           
@@ -389,16 +417,19 @@ const StudyPost = () => {
 
               <FormGroup>
                 <Label className="H5">최대인원</Label>
-                <Input
-                  type="number"
-                  min="2"
-                  max="50"
-                  value={formData.capacity}
-                  onChange={(e) => handleInputChange('capacity', parseInt(e.target.value) || 0)}
-                  placeholder="2~50명"
-                />
-                {errors.capacity && <ErrorMessage>{errors.capacity}</ErrorMessage>}
-              </FormGroup>
+                <Select
+                value={formData.capacity}
+                onChange={(e) => handleInputChange('capacity', parseInt(e.target.value) || 0)} 
+                >
+                  <option value="" disabled>최대 인원 선택</option>
+                  <option value={2}>2명</option>
+                  <option value={3}>3명</option>
+                  <option value={4}>4명</option>
+                  <option value={5}>5명</option>
+                  <option value={6}>6명</option>
+                  </Select>
+                  {errors.capacity && <ErrorMessage>{errors.capacity}</ErrorMessage>}
+                  </FormGroup>
             </FormRow>
 
             <FormGroup style={{ marginBottom: '2rem' }}>
@@ -433,7 +464,7 @@ const StudyPost = () => {
 
             <SubmitButton 
               onClick={handleSubmit}
-              disabled={!isFormValid || isSubmitting}
+              disabled={!isFormValid || isSubmitting || !userMe}
             >
               {isSubmitting ? "작성 중..." : "게시글 올리기"}
             </SubmitButton>

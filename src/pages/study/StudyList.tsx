@@ -9,7 +9,6 @@ import axiosInstance from "../../../axiosInstance";
 
 const initialFilters: StudyFilter = {
   page: 0,
-  size: 10,
   campus: undefined,
   language: undefined,
   status: undefined,
