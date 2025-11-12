@@ -219,19 +219,17 @@ const ProfileList: React.FC = () => {
     try {
       const params: any = { page, size: profilesPerPage };
 
-      // 캠퍼스 / 언어 필터
       if (filters.campus) params.campus = filters.campus.toUpperCase();
       if (filters.nativeLang) params.nativeLang = filters.nativeLang;
       if (filters.learnLang) params.learnLang = filters.learnLang;
 
-      // 키워드 (세 개 합쳐서 하나의 배열로 전송)
       const keywordArray = [
         filters.personalityKeyword,
         filters.hobbyKeyword,
         filters.topicKeyword,
       ]
-        .filter((v) => v) // 빈값 제거
-        .map((v) => Number(v)); // 숫자로 변환
+        .filter((v) => v) 
+        .map((v) => Number(v)); 
 
       if (keywordArray.length > 0) params.keywordId = keywordArray;
 
@@ -258,7 +256,7 @@ const ProfileList: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchProfiles(0); // 기본 전체 조회
+    fetchProfiles(0); 
   }, []);
 
   return (
