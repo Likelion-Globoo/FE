@@ -40,7 +40,7 @@ export interface StudyItem {
   createdAt: string;
   updatedAt: string;
 
-  // currentParticipants: number; // 😭현재 참여 인원 필요하나 api 작성 재확인 필요
+  currentParticipants: number; 
 }
 //  StudyDetail에서 authorUsername: string; 해당 부분(현재는 목데이터) 주석처리함
 
@@ -48,12 +48,6 @@ export interface StudyItem {
 // 스터디 리스트 응답 (GET /api/studies)
 export interface StudyListResponse {
   data: StudyItem[];
-  pageInfo: {
-    page: number;
-    size: number;
-    totalElements: number;
-    totalPages: number;
-  };
 }
 
 // 스터디 상세 응답 (GET /api/studies/{postId})
