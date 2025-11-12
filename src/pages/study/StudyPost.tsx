@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { StudyRequest } from "../../types/study.types";
+import { createStudy, handleApiError } from "../../api/studyAPI";
+import type {UserMeResponse } from "../../types/mypage&profile.types";
+import axiosInstance from "../../../axiosInstance";
 
-// 현재 사용자 목데이터
-const mockUserData = {
-  id: 1,
-  username: "홍길동",
-  nickname: "멋쟁이",
-  email: "likelion@hufs.ac.kr",
-  profileImage: null,
-  country: "KR"
+const fetchUserMe = async (): Promise<UserMeResponse | null> => {
+    try {
+        const response = await axiosInstance.get<UserMeResponse>('/api/users/me');
+        return response.data;
+    } catch (error) {
+        console.error("내 정보 조회 실패 (인증 문제일 수 있으니 확인하셔요):", error);
+        return null;
+    }
 };
 
 const Container = styled.div`
