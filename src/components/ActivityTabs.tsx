@@ -2,12 +2,17 @@ import styled from "styled-components";
 import { type Post } from "../types/mypage&profile.types";
 import ParticipantImg from "../assets/img-participant.svg";
 import {type Comment} from "../types/mypage&profile.types";
+import { useState } from "react";
 
 interface ActivityTabsProps {
   activeTab: 'posts' | 'comments';
   onTabChange: (tab: 'posts' | 'comments') => void;
   posts: Post[];
   comments: Comment[]; 
+
+  onPostClick: (postId: number) => void;
+  onCommentEdit: (commentId: number, postId: number, content: string) => void;
+  onCommentDelete: (commentId: number, postId: number) => void;
 }
 
 const Container = styled.div`
@@ -199,50 +204,125 @@ const EmptyMessage = styled.div`
   color: var(--gray-400);
 `;
 
-const CommentList = ({ comments }: { comments: Comment[] }) => {
+const CommentList = ({
+  comments,
+  onCommentEdit,
+  onCommentDelete,
+}: {
+  comments: Comment[];
+  onCommentEdit: (commentId: number, postId: number, content: string) => void;
+  onCommentDelete: (commentId: number, postId: number) => void;
+}) => {
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingContent, setEditingContent] = useState<string>("");
+
   if (comments.length === 0) {
     return <EmptyMessage className="Body1">작성한 댓글이 없습니다.</EmptyMessage>;
   }
   
   return (
     <CommentListContainer>
-      {comments.map((comment) => (
-        <CommentItem key={comment.id}>
-          <CommentHeader>
-            <CommentBadge className="Button2">모집중</CommentBadge>
-            <CommentParticipantInfo className="Body2">
-              <img src={ParticipantImg} />
-              3명 / 15명
-            </CommentParticipantInfo>
-            <CommentTags>
-              <CommentTag className="Button2"># 서울캠퍼스</CommentTag>
-              <CommentTag className="Button2"># 글로벌캠퍼스</CommentTag>
-              <CommentTag className="Button2"># 한국어</CommentTag>
-              <CommentTag className="Button2"># 영어</CommentTag>
-            </CommentTags>
-          </CommentHeader>
-          
-          <OriginalPostTitle className="H4">{comment.postTitle}</OriginalPostTitle>
-          
-          <CommentContent className="Body2">
-            {comment.content}
-          </CommentContent>
-          
-          <CommentFooter>
-            <ActionButton $variant="delete" className="Button1">
-              삭제하기
-            </ActionButton>
-            <ActionButton $variant="edit" className="Button1">
-              수정하기
-            </ActionButton>
-          </CommentFooter>
-        </CommentItem>
-      ))}
+      {comments.map((comment) => {
+        const isEditing = editingId === comment.id;
+
+        return (
+          <CommentItem key={comment.id}>
+            <CommentHeader>
+              <CommentBadge className="Button2">
+                {comment.status ?? "모집중"}
+              </CommentBadge>
+              <CommentParticipantInfo className="Body2">
+                <img src={ParticipantImg} />
+                {(comment.currentParticipants ?? 0)}명 / {(comment.maxParticipants ?? 0)}명
+              </CommentParticipantInfo>
+              <CommentTags>
+                {(comment.tags ?? []).map((tag, index) => (
+                  <CommentTag key={index} className="Button2">
+                    # {tag}
+                  </CommentTag>
+                ))}
+              </CommentTags>
+            </CommentHeader>
+            
+            <OriginalPostTitle className="H4">
+              {comment.postTitle}
+            </OriginalPostTitle>
+            
+            {isEditing ? (
+              <CommentContent
+                as="textarea"
+                className="Body2"
+                style={{ width: "100%", minHeight: "80px", resize: "vertical" }}
+                value={editingContent}
+                onChange={(e) => setEditingContent(e.target.value)}
+              />
+            ) : (
+              <CommentContent className="Body2">
+                {comment.content}
+              </CommentContent>
+            )}
+            
+            <CommentFooter>
+              {isEditing ? (
+                <>
+                  <ActionButton
+                    $variant="delete"
+                    className="Button1"
+                    onClick={() => {
+                      setEditingId(null);
+                      setEditingContent("");
+                    }}
+                  >
+                    취소
+                  </ActionButton>
+                  <ActionButton
+                    $variant="edit"
+                    className="Button1"
+                    onClick={() => {
+                      onCommentEdit(comment.id, comment.postId, editingContent);
+                      setEditingId(null);
+                    }}
+                  >
+                    저장
+                  </ActionButton>
+                </>
+              ) : (
+                <>
+                  <ActionButton
+                    $variant="delete"
+                    className="Button1"
+                    onClick={() => onCommentDelete(comment.id, comment.postId)}
+                  >
+                    삭제하기
+                  </ActionButton>
+                  <ActionButton
+                    $variant="edit"
+                    className="Button1"
+                    onClick={() => {
+                      setEditingId(comment.id);
+                      setEditingContent(comment.content);
+                    }}
+                  >
+                    수정하기
+                  </ActionButton>
+                </>
+              )}
+            </CommentFooter>
+          </CommentItem>
+        );
+      })}
     </CommentListContainer>
   );
-};// 😭삭제하기 -> 댓글 데이터 삭제 필요(api 연동), 수정하기 -> 페이지 이동 필요(수정 api 확인 후 진행)
+};
 
-const ActivityTabs = ({ activeTab, onTabChange, posts, comments }: ActivityTabsProps) => {
+const ActivityTabs = ({ activeTab,
+  onTabChange,
+  posts,
+  comments,
+  onPostClick,
+  onCommentEdit,
+  onCommentDelete,
+}: ActivityTabsProps) => {
   return (
     <Container>
       <TabHeader>
@@ -290,7 +370,9 @@ const ActivityTabs = ({ activeTab, onTabChange, posts, comments }: ActivityTabsP
                 <PostTitle className="H4">{post.title}</PostTitle>
                 
                 <PostFooter>
-                  <MoreButton className="Body2">더 보기 &gt;</MoreButton>
+                  <MoreButton className="Body2"
+                  onClick={() => onPostClick(post.id)}
+                  >더 보기 &gt;</MoreButton>
                 </PostFooter>
               </PostItem>
             ))
@@ -299,7 +381,11 @@ const ActivityTabs = ({ activeTab, onTabChange, posts, comments }: ActivityTabsP
       )}
 
       {activeTab === 'comments' && (
-        <CommentList comments={comments} />
+        <CommentList 
+        comments={comments}
+    onCommentEdit={onCommentEdit}
+    onCommentDelete={onCommentDelete}
+        />
       )}
     </Container>
   );

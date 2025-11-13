@@ -65,6 +65,7 @@ export const joinStudy = async (postId: number): Promise<ApiResponse<string>> =>
     const res = await axiosInstance.post<ApiResponse<string>>(
       `/api/studies/${postId}/join`
     );
+    console.log("스터디 가입 요청 성공:", res.data);
     return res.data;
   } catch (error) {
     console.error("스터디 가입 요청 실패:", error);

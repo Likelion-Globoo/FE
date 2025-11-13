@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom"; 
 import ProfileCard from "../components/ProfileCard";
 import ActivityTabs from "../components/ActivityTabs";
 import axiosInstance from "../../axiosInstance";
+import type { Post, Comment } from "../types/mypage&profile.types";
+import { updateComment, deleteComment } from "../api/commentAPI";
 
 const Container = styled.div`
   width: 100%;
@@ -22,6 +25,7 @@ const PageTitle = styled.h1`
 `;
 
 const Mypage = () => {
+  const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
   const [languages, setLanguages] = useState<{ nativeCodes: string[]; learnCodes: string[] }>({
     nativeCodes: [],
@@ -36,6 +40,8 @@ const Mypage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState<"posts" | "comments">("posts");
+  const [myPosts, setMyPosts] = useState<Post[]>([]);
+  const [myComments, setMyComments] = useState<Comment[]>([]);
 
   const LANGUAGE_MAP: Record<string, string> = {
     ko: "한국어",
@@ -78,7 +84,83 @@ const Mypage = () => {
       }
     };
 
+    const fetchMyPosts = async () => {
+      try {
+        const res = await axiosInstance.get("/api/users/me/study-posts");
+        const data = res.data as any[];
+
+        const mapped: Post[] = data.map((post) => ({
+          id: post.id,
+          status: post.status as "모집중" | "마감",
+          currentParticipants: post.currentParticipants,
+          maxParticipants: post.capacity,
+          title: post.title,
+          tags: [
+            ...(post.campuses || []),
+            ...(post.languages || []),
+          ],
+          createdAt: post.createdAt,
+        }));
+
+        setMyPosts(mapped);
+      } catch (error) {
+        console.error("내가 작성한 스터디 글 조회 실패:", error);
+      }
+    };
+
+    const fetchMyComments = async () => {
+      try {
+        const res = await axiosInstance.get("/api/users/me/comments");
+        const data = res.data as any[];
+
+        const mapped: Comment[] = await Promise.all(
+          data.map(async (comment) => {
+            try {
+              const postRes = await axiosInstance.get(
+                `/api/studies/${comment.postId}`
+              );
+              const post = postRes.data.data;
+
+              const tags = [
+                ...(post.campuses || []),
+                ...(post.languages || []),
+              ];
+
+              return {
+                id: comment.id,
+                postId: comment.postId,
+                postTitle: post.title,
+                content: comment.content,
+                status: post.status as "모집중" | "마감",
+                currentParticipants: post.currentParticipants,
+                maxParticipants: post.capacity,
+                tags,
+              } as Comment;
+            } catch (e) {
+              console.error(
+                `댓글 ${comment.id}의 게시글 정보 조회 실패:`,
+                e
+              );
+              // 게시글 정보 못 가져와도 댓글은 보여주기
+              return {
+                id: comment.id,
+                postId: comment.postId,
+                postTitle: "(게시글 정보를 가져오지 못했습니다)",
+                content: comment.content,
+              } as Comment;
+            }
+          })
+        );
+
+        setMyComments(mapped);
+      } catch (error) {
+        console.error("내가 작성한 댓글 조회 실패:", error);
+      }
+    };
+
     fetchUserData();
+    fetchMyPosts();
+    fetchMyComments();
   }, []);
 
   // 프로필 수정
@@ -162,6 +244,48 @@ const Mypage = () => {
   };
   
 
+  const handlePostClick = (postId: number) => {
+    navigate(`/study/${postId}`);
+  };
+
+  const handleCommentEdit = async (
+    commentId: number,
+    postId: number,
+    content: string
+  ) => {
+    if (!content.trim()) {
+      alert("댓글 내용을 입력해주세요.");
+      return;
+    }
+
+    try {
+      await updateComment(postId, commentId, { content });
+      // 상태도 같이 업데이트 (리렌더용)
+      setMyComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId ? { ...c, content } : c
+        )
+      );
+      alert("댓글이 수정되었습니다.");
+    } catch (error) {
+      console.error("댓글 수정 실패:", error);
+      alert("댓글 수정 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleCommentDelete = async (commentId: number, postId: number) => {
+    if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
+
+    try {
+      await deleteComment(postId, commentId);
+      setMyComments((prev) => prev.filter((c) => c.id !== commentId));
+      alert("댓글이 삭제되었습니다.");
+    } catch (error) {
+      console.error("댓글 삭제 실패:", error);
+      alert("댓글 삭제 중 오류가 발생했습니다.");
+    }
+  };
+
   return (
     <Container>
       <ContentWrapper>
@@ -212,8 +336,11 @@ const Mypage = () => {
         <ActivityTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          posts={[]} // 게시글 API 연동 예정
-          comments={[]} // 댓글 API 연동 예정
+          posts={myPosts}
+          comments={myComments}
+          onPostClick={handlePostClick}             
+          onCommentEdit={handleCommentEdit}          
+          onCommentDelete={handleCommentDelete}
         />
       </ContentWrapper>
     </Container>

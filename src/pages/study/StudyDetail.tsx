@@ -292,30 +292,29 @@ const StudyDetail = () => {
 
 
     // 게시글 상세 정보
-    useEffect(() => {
-        const fetchStudyDetail = async () => {
-            if (isNaN(studyId) || studyId === 0) {
-                setError("잘못된 게시글 ID입니다.");
-                setIsLoading(false);
-                return;
-            }
+    const fetchStudyDetail = useCallback(async () => {
+        if (isNaN(studyId) || studyId === 0) {
+          setError("잘못된 게시글 ID입니다.");
+          setIsLoading(false);
+          return;
+        }
 
-            try {
-                const response: StudyDetailResponse = await getStudyDetail(studyId);
-                
-                setStudyDetail(response.data); 
-                setError(null);
-                fetchComments(); 
-            } catch (err) {
-                const errorMessage = handleApiError(err);
-                setError(`게시글 정보를 불러오는데 실패했습니다: ${errorMessage}`);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        try {
+          const response: StudyDetailResponse = await getStudyDetail(studyId);
+          setStudyDetail(response.data);
+          setError(null);
+          fetchComments();
+        } catch (err) {
+          const errorMessage = handleApiError(err);
+          setError(`게시글 정보를 불러오는데 실패했습니다: ${errorMessage}`);
+        } finally {
+          setIsLoading(false);
+        }
+      }, [studyId, fetchComments]);
 
+      useEffect(() => {
         fetchStudyDetail();
-    }, [studyId, fetchComments]);
+      }, [fetchStudyDetail]);
 
 
     // 게시글 삭제
@@ -399,6 +398,7 @@ const StudyDetail = () => {
   try {
     const res = await joinStudy(studyId);
     alert(res.message || "스터디 가입 요청을 성공적으로 보냈습니다.");
+    await fetchStudyDetail();
   } catch (err) {
     const errorMessage = handleApiError(err);
     alert(`스터디 가입 요청에 실패했습니다: ${errorMessage}`);
@@ -536,8 +536,7 @@ const isAuthor = currentUserId != null && studyData.authorId === currentUserId;
 
                                     <ParticipantInfo className="Body2">
                                         <img src={ParticipantImg} alt="참여자" />
-                                        {/* API에 currentParticipants 필드가 없으므로 임시로 0으로 표시 - pr하시면 다시 수정 */}
-                                        0명 / {studyData.capacity}명
+                                        {(studyData.currentParticipants ?? 2 )}명 / {studyData.capacity}명
                                     </ParticipantInfo>
 
                                     <TagContainer>
