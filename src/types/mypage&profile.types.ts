@@ -68,9 +68,9 @@ export interface ProfileImageResponse {
   profileImage: string;
 }
 
-// 게시물 타입 (다른 api 확인하고 필요없으면 삭제할 예정)
+// 게시물 타입
 export interface Post {
-  id: string;
+  id: number;
   status: '모집중' | '마감';
   currentParticipants: number;
   maxParticipants: number;
@@ -155,8 +155,14 @@ export interface ProfileDetailResponse {
 
 // 작성한 댓글 타입
 export type Comment = {
+  currentParticipants: number;
   id: number;
   postId: number;
   postTitle: string;
   content: string;
+
+  status?: '모집중' | '마감';
+  curentParticipants?: number;
+  maxParticipants?: number;
+  tags?: string[];
 };
