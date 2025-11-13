@@ -347,7 +347,6 @@ useEffect(() => {
       const opponentId =
         apiData.userAId === userId ? apiData.userBId : apiData.userAId;
 
-      // WAITING
       if (apiData.status === "WAITING") {
         setStage("loading");
         setMatchId(null);
@@ -358,7 +357,6 @@ useEffect(() => {
         return;
       }
 
-      // FOUND
       if (apiData.status === "FOUND") {
         setStage("matched");
         if (!matchId) setMatchId(apiData.matchId);
@@ -370,7 +368,6 @@ useEffect(() => {
         return;
       }
 
-      // ACCEPTED_ONE 유지
       if (apiData.status === "ACCEPTED_ONE") {
         setStage("matched");
 
@@ -382,9 +379,8 @@ useEffect(() => {
         return;
       }
 
-      // ACCEPTED_BOTH → CHAT
       if (apiData.status === "ACCEPTED_BOTH") {
-        console.log("🔥 ACCEPTED_BOTH — 채팅 입장합니다!");
+        console.log("ACCEPTED_BOTH — 채팅 입장합니다!");
 
         clearInterval(intervalRef.current!);
         setChatRoomId(apiData.chatRoomId);
@@ -409,7 +405,6 @@ useEffect(() => {
 const handleAcceptMatch = async () => {
   console.log("handleAcceptMatch 실행됨, matchId:", matchId);
 
-  // matchId가 아직 null이면 active 정보 다시 받아오기
   if (!matchId) {
     console.log("⚠ matchId가 null → 서버에서 다시 불러옵니다.");
 
@@ -443,19 +438,17 @@ const handleAcceptMatch = async () => {
       { headers: { "Content-Type": "application/json" } }
     );
 
-    console.log("✔ 매칭 수락 요청 성공");
+    console.log("매칭 수락 요청 성공");
     setHasAccepted(true);
     setWaitingAccept(true);
   } catch (error) {
-    console.error("❌ 매칭 수락 실패:", error);
+    console.error("매칭 수락 실패:", error);
     alert("채팅 시작 중 오류가 발생했습니다.");
   }
 };
 
 
-
-
-
+  // 다른 상대 찾기(거절)
   const handleFindAnother = async () => {
     try {
       if (!matchId) {
@@ -473,23 +466,14 @@ const handleAcceptMatch = async () => {
       setChatRoomId(null);
       setHasAccepted(false);
       setWaitingAccept(false);
-      // 폴링은 그대로 돌아가고 있으니까, 서버에서
-      // 다시 WAITING → FOUND 되면 자동으로 새 매칭 붙음
+
     } catch (error) {
       console.error("다음 상대 찾기 오류:", error);
       alert("다른 상대를 찾는 중 오류가 발생했습니다.");
     }
   };
 
-  
-  
-  
-  
-  
-  
-
-
-  // 매칭 취소
+  // 매칭 취소 
   const handleCancelMatching = async () => {
     try {
       await axiosInstance.delete("/api/matching/queue", { data: { userId } });
