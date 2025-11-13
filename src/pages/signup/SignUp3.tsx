@@ -152,27 +152,23 @@ const SignUp3 = () => {
 
   const navigate = useNavigate();
   const { signupData, setSignupData } = useSignup(); 
-  const languages = ["한국어", "영어", "일본어", "중국어", "러시아어", "독일어", "스페인어"];
-  const nationalities = ["대한민국", "미국", "일본", "중국", "스페인", "독일", "러시아"];
+  const languages = ["한국어", "영어", "중국어", "아랍어", "이탈리아어"];
+  const nationalities = ["대한민국", "미국", "중국", "이집트", "이탈리아"];
 
   const langMap: Record<string, string> = {
     "한국어": "ko",
     "영어": "en",
-    "일본어": "ja",
     "중국어": "zh",
-    "러시아어": "ru",
-    "독일어": "de",
-    "스페인어": "es",
+    "아랍어": "ar",
+    "이탈리아어": "it",
   };
 
   const nationMap: Record<string, string> = {
     "대한민국": "KR",
     "미국": "US",
-    "일본": "JP",
+    "이집트": "EG",
     "중국": "CN",
-    "스페인": "ES",
-    "독일": "DE",
-    "러시아": "RU",
+    "이탈리아": "IT",
   };
 
   const reverseLangMap = Object.fromEntries(Object.entries(langMap).map(([k, v]) => [v, k]));
