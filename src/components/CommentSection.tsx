@@ -33,27 +33,41 @@ const getCommentProfileImage = (
   currentUserId: number,
   currentUserProfileImageUrl?: string | null
 ) => {
-  //내가 쓴 댓글 + 내 최신 프로필 이미지가 있을 때
-  if (
-    comment.author.id === currentUserId &&
-    currentUserProfileImageUrl
-  ) {
-    return currentUserProfileImageUrl.replace(/([^:]\/)\/+/g, "$1");
+  const useDefaultProfile =
+    localStorage.getItem("useDefaultProfileImage") === "true";
+
+  const country = (comment.author as any).country as string | undefined;
+  const fallbackCharacter = country && countryCharacterImages[country]
+    ? countryCharacterImages[country]
+    : KoreaProfileImg;
+
+  // 🔹 내가 쓴 댓글인 경우
+  if (comment.author.id === currentUserId) {
+    // 🔸 기본이미지 모드면: 업로드 이미지 다 무시하고 국가 캐릭터 사용
+    if (useDefaultProfile) {
+      return fallbackCharacter;
+    }
+
+    // 🔸 기본이미지 모드가 아니면: 최신 프로필 > 서버 author.profileImageUrl
+    const src =
+      currentUserProfileImageUrl ||
+      comment.author.profileImageUrl ||
+      null;
+
+    if (src) {
+      return src.replace(/([^:]\/)\/+/g, "$1");
+    }
+
+    // 둘 다 없으면 국가 캐릭터
+    return fallbackCharacter;
   }
 
-  // 댓글에 실려 있는 author.profileImageUrl 우선
+  // 🔹 다른 사람이 쓴 댓글 (기본모드 플래그 신경 안 씀)
   if (comment.author.profileImageUrl) {
     return comment.author.profileImageUrl.replace(/([^:]\/)\/+/g, "$1");
   }
 
-  // author.country 기반 국적 캐릭터
-  const country = (comment.author as any).country as string | undefined;
-  if (country && countryCharacterImages[country]) {
-    return countryCharacterImages[country];
-  }
-
-  // 혹여나 country 데이터 못받아오면 한국 캐릭터로 기본 설정
-  return KoreaProfileImg;
+  return fallbackCharacter;
 };
 
 const CommentContainer = styled.div`

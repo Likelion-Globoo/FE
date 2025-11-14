@@ -379,52 +379,67 @@ useEffect(() => {
       <ContentWrapper>
         <LeftPanel>
           {userMe ? (
-          <UserProfileCard>
-            <ProfileImage 
-              src={
-                userMe.profileImageUrl ||
-                (userMe.country && countryCharacterImages[userMe.country]) ||
-                  KoreaProfileImg
-              }
-              alt="프로필"
-            />
-            <UserInfo>
-              <UserName className="H4">
-                {userMe.name} / {userMe.nickname} 
-              </UserName>
-              <UserEmail className="Body2">
-                {userMe.email}
-              </UserEmail>
-            </UserInfo>
-            <ButtonGroup>
-              <ActionButton 
-                $variant="secondary" 
-                className="Button1"
-                onClick={handleMyPostsClick}
-              >
-                작성한 게시글
-              </ActionButton>
-              <ActionButton 
-                $variant="secondary" 
-                className="Button1"
-                onClick={handleMyCommentsClick}
-              >
-                작성한 댓글
-              </ActionButton>
-              <ActionButton 
-                $variant="primary" 
-                className="Button1"
-                onClick={handleCreatePostClick}
-              >
-               게시글 작성
-              </ActionButton>
-            </ButtonGroup>
-          </UserProfileCard>
-          ) : (
-            <UserProfileCard>
-              <div className="Body1">로그인 후 내 정보를 볼 수 있습니다.</div>
-            </UserProfileCard>
-          )}
+  <UserProfileCard>
+    {(() => {
+      const useDefaultProfile =
+        localStorage.getItem("useDefaultProfileImage") === "true";
+
+      // 나라 코드 기반 기본 캐릭터 (없으면 한국)
+      const defaultCharacter =
+        (userMe.country &&
+          countryCharacterImages[
+            userMe.country as keyof typeof countryCharacterImages
+          ]) || KoreaProfileImg;
+
+      // 서버에서 온 URL (fetchUserMe에서 이미 슬래시/캐시 처리해둠)
+      let profileUrl = userMe.profileImageUrl;
+
+      // 기본이미지 모드면 강제로 null
+      if (useDefaultProfile) {
+        profileUrl = null;
+      }
+
+      return (
+        <>
+          <ProfileImage src={profileUrl || defaultCharacter} alt="프로필" />
+          <UserInfo>
+            <UserName className="H4">
+              {userMe.name} / {userMe.nickname}
+            </UserName>
+            <UserEmail className="Body2">{userMe.email}</UserEmail>
+          </UserInfo>
+          <ButtonGroup>
+            <ActionButton
+              $variant="secondary"
+              className="Button1"
+              onClick={handleMyPostsClick}
+            >
+              작성한 게시글
+            </ActionButton>
+            <ActionButton
+              $variant="secondary"
+              className="Button1"
+              onClick={handleMyCommentsClick}
+            >
+              작성한 댓글
+            </ActionButton>
+            <ActionButton
+              $variant="primary"
+              className="Button1"
+              onClick={handleCreatePostClick}
+            >
+              게시글 작성
+            </ActionButton>
+          </ButtonGroup>
+        </>
+      );
+    })()}
+  </UserProfileCard>
+) : (
+  <UserProfileCard>
+    <div className="Body1">로그인 후 내 정보를 볼 수 있습니다.</div>
+  </UserProfileCard>
+)}
         </LeftPanel>
 
         <RightPanel>
@@ -496,6 +511,7 @@ useEffect(() => {
                   key={study.id} 
                   study={study}
                   onClick={() => handleStudyClick(study.id)}
+                  currentUserId={userMe?.id}
                 />
               ))
             )}

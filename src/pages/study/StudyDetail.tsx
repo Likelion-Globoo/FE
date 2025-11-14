@@ -261,6 +261,13 @@ const StudyDetail = () => {
     const [hasJoined, setHasJoined] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
 
+    const useDefaultProfile =
+  typeof window !== "undefined" &&
+  localStorage.getItem("useDefaultProfileImage") === "true";
+
+    const effectiveUserProfileImageUrl =
+  useDefaultProfile ? null : userMe?.profileImageUrl ?? null;
+
     
     useEffect(() => {
   const fetchUserMe = async () => {
@@ -488,18 +495,6 @@ const StudyDetail = () => {
   (studyData as any).authorNation ||
   userMe?.country; // 없으면 내 country라도 사용
 
-
-    <CommentSection
-  studyId={studyId}
-  comments={comments}
-  currentUserId={currentUserId ?? 0}
-  onAddComment={handleAddComment}
-  onEditComment={handleEditComment}
-  onDeleteComment={handleDeleteComment}
-  isCommentsLoading={isCommentsLoading}
-/>
-    // const characterImage = studyData.authorProfileImageUrl || KoreaProfileImg;
-
     const fallbackCharacter =
   (authorCountryCode &&
     countryCharacterImages[
@@ -509,11 +504,17 @@ const StudyDetail = () => {
 
   let characterImage = fallbackCharacter;
 
-  if (isAuthor && userMe?.profileImageUrl) {
+  if (isAuthor) {
+  if (useDefaultProfile || !userMe?.profileImageUrl) {
+    // 기본이미지 모드 → fallback 사용
+    characterImage = fallbackCharacter;
+  } else if (userMe.profileImageUrl) {
     characterImage = userMe.profileImageUrl;
-  } else if (studyData.authorProfileImageUrl) {
-    characterImage = studyData.authorProfileImageUrl;
   }
+} else if (studyData.authorProfileImageUrl) {
+  // 남이 쓴 글이면 서버에서 온 authorProfileImageUrl 그대로
+  characterImage = studyData.authorProfileImageUrl;
+}
 
   // 혹시 모르니 슬래시 정리
   if (characterImage) {
@@ -546,52 +547,61 @@ const StudyDetail = () => {
         <Container>
             <ContentWrapper>
                 <LeftPanel>
-          <UserProfileCard>
-            {/*스터디posf와 동일하게 수정/*/}
-            {isUserLoading ? (
-    <p>사용자 정보 로딩 중...</p>
-  ) : userMe ? (
-    <>
-      <ProfileImage
-        src={userMe.profileImageUrl || "/placeholder-profile.png"}
-        alt="프로필"
-      />
-      <UserInfo>
-        <UserName className="H4">
-          {userMe.name} / {userMe.nickname}
-        </UserName>
-        <UserEmail className="Body2">{userMe.email}</UserEmail>
-      </UserInfo>
-    </>
-  ) : (
-    <p>로그인이 필요합니다.</p>
-  )}
+  <UserProfileCard>
+    {isUserLoading ? (
+      <p>사용자 정보 로딩 중...</p>
+    ) : userMe ? (
+      (() => {
+        const defaultCharacter =
+          (userMe.country &&
+            countryCharacterImages[
+              userMe.country as keyof typeof countryCharacterImages
+            ]) || KoreaProfileImg;
 
-            <ButtonGroup>
-              <ActionButton 
-                $variant="secondary" 
-                className="Button1"
-                onClick={handleMyPostsClick}
-              >
-                작성한 게시글
-              </ActionButton>
-              <ActionButton 
-                $variant="secondary" 
-                className="Button1"
-                onClick={handleMyCommentsClick}
-              >
-                작성한 댓글
-              </ActionButton>
-              <ActionButton 
-                $variant="primary" 
-                className="Button1"
-                onClick={handleBackToList}
-              >
-                스터디 목록
-              </ActionButton>
-            </ButtonGroup>
-          </UserProfileCard>
-        </LeftPanel>
+        return (
+          <>
+            <ProfileImage
+              src={effectiveUserProfileImageUrl || defaultCharacter}
+              alt="프로필"
+            />
+            <UserInfo>
+              <UserName className="H4">
+                {userMe.name} / {userMe.nickname}
+              </UserName>
+              <UserEmail className="Body2">{userMe.email}</UserEmail>
+            </UserInfo>
+          </>
+        );
+      })()
+    ) : (
+      <p>로그인이 필요합니다.</p>
+    )}
+
+    <ButtonGroup>
+      <ActionButton
+        $variant="secondary"
+        className="Button1"
+        onClick={handleMyPostsClick}
+      >
+        작성한 게시글
+      </ActionButton>
+      <ActionButton
+        $variant="secondary"
+        className="Button1"
+        onClick={handleMyCommentsClick}
+      >
+        작성한 댓글
+      </ActionButton>
+      <ActionButton
+        $variant="primary"
+        className="Button1"
+        onClick={handleBackToList}
+      >
+        스터디 목록
+      </ActionButton>
+    </ButtonGroup>
+  </UserProfileCard>
+</LeftPanel>
 
 
                 <RightPanel>
@@ -667,16 +677,15 @@ const StudyDetail = () => {
                         </JoinButton>
                         )}
                     </StudyDetailCard>
-
                     <CommentSection
-                        studyId={studyId}
-                        comments={comments}
-                        currentUserId={currentUserId ?? 0}
-                        onAddComment={handleAddComment}
-                        onEditComment={handleEditComment}
-                        onDeleteComment={handleDeleteComment}
-                        isCommentsLoading={isCommentsLoading}
-                        currentUserProfileImageUrl={userMe?.profileImageUrl ?? null}
+                      studyId={studyId}
+                      comments={comments}
+                      currentUserId={currentUserId ?? 0}
+                      onAddComment={handleAddComment}
+                      onEditComment={handleEditComment}
+                      onDeleteComment={handleDeleteComment}
+                      isCommentsLoading={isCommentsLoading}
+                      currentUserProfileImageUrl={effectiveUserProfileImageUrl}
                     />
                 </RightPanel>
             </ContentWrapper>

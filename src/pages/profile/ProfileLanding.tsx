@@ -304,7 +304,7 @@ const ProfileLanding: React.FC = () => {
               campus={profile.campus}
               country={profile.country}
               mbti={profile.mbti}
-              profileImage={profile.profileImage}
+              profileImageUrl={profile.profileImage}
               languages={profile.languages}
               keywords={profile.keywords}
               intro={profile.intro}

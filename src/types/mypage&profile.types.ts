@@ -1,5 +1,6 @@
 // 마이페이지 & 프로필(상단 컴포넌트 해당) 관련 타입 정의 파일
 export interface UserMeResponse {
+  id: number;
   userId: number;
 
   email: string;

@@ -6,6 +6,20 @@ import { createStudy, handleApiError, getStudyDetail, updateStudy } from "../../
 import type {UserMeResponse } from "../../types/mypage&profile.types";
 import axiosInstance from "../../../axiosInstance";
 
+import AmericaProfileImg from "../../assets/img-profile1-America.svg";
+import KoreaProfileImg from "../../assets/img-profile1-Korea.svg";
+import ItalyProfileImg from "../../assets/img-profile1-Italy.svg";
+import EgyptProfileImg from "../../assets/img-profile1-Egypt.svg";
+import ChinaProfileImg from "../../assets/img-profile1-China.svg";
+
+const countryCharacterImages: { [key: string]: string } = {
+  US: AmericaProfileImg,
+  KR: KoreaProfileImg,
+  IT: ItalyProfileImg,
+  EG: EgyptProfileImg,
+  CN: ChinaProfileImg,
+};
+
 const fetchUserMe = async (): Promise<UserMeResponse | null> => {
     try {
         const response = await axiosInstance.get<UserMeResponse>('/api/users/me');
@@ -376,51 +390,72 @@ const StudyPost = () => {
       <ContentWrapper>
         <LeftPanel>
           <UserProfileCard>
-            {isUserLoading ? (
-                <p>사용자 정보 로딩 중...</p>
-            ) : userMe ? (
-                <>
-                <ProfileImage 
-                    src={userMe.profileImageUrl || "/placeholder-profile.png"} 
-                    alt="프로필"
-                />
-                <UserInfo>
-                    <UserName className="H4">
-                        {userMe.name} / {userMe.nickname}
-                    </UserName>
-                    <UserEmail className="Body2">
-                        {userMe.email}
-                    </UserEmail>
-                </UserInfo>
-                </>
-            ) : (
-                <p>로그인이 필요합니다.</p>
-            )}
+  {isUserLoading ? (
+    <p>사용자 정보 로딩 중...</p>
+  ) : userMe ? (
+    (() => {
+      // 🔹 1. 기본이미지 모드인지 확인 (마이페이지에서 설정해 둔 플래그)
+      const useDefaultProfile =
+        localStorage.getItem("useDefaultProfileImage") === "true";
 
-            <ButtonGroup>
-              <ActionButton 
-                $variant="secondary" 
-                className="Button1"
-                onClick={handleMyPostsClick}
-              >
-                작성한 게시글
-              </ActionButton>
-              <ActionButton 
-                $variant="secondary" 
-                className="Button1"
-                onClick={handleMyCommentsClick}
-              >
-                작성한 댓글
-              </ActionButton>
-              <ActionButton 
-                $variant="primary" 
-                className="Button1"
-                onClick={handleBackToList}
-              >
-                스터디 목록
-              </ActionButton>
-            </ButtonGroup>
-          </UserProfileCard>
+      // 🔹 2. 나라 코드 기반 기본 캐릭터 (없으면 한국 기본이미지)
+      const defaultCharacter =
+        (userMe.country &&
+          countryCharacterImages[
+            userMe.country as keyof typeof countryCharacterImages
+          ]) || KoreaProfileImg;
+
+      // 🔹 3. 서버에서 받은 프로필 URL
+      let profileUrl = userMe.profileImageUrl || null;
+
+      // 🔹 4. 기본이미지 모드면 강제로 null 처리 → defaultCharacter 사용
+      if (useDefaultProfile) {
+        profileUrl = null;
+      }
+
+      return (
+        <>
+          <ProfileImage
+            src={profileUrl || defaultCharacter}
+            alt="프로필"
+          />
+          <UserInfo>
+            <UserName className="H4">
+              {userMe.name} / {userMe.nickname}
+            </UserName>
+            <UserEmail className="Body2">{userMe.email}</UserEmail>
+          </UserInfo>
+        </>
+      );
+    })()
+  ) : (
+    <p>로그인이 필요합니다.</p>
+  )}
+
+  <ButtonGroup>
+    <ActionButton
+      $variant="secondary"
+      className="Button1"
+      onClick={handleMyPostsClick}
+    >
+      작성한 게시글
+    </ActionButton>
+    <ActionButton
+      $variant="secondary"
+      className="Button1"
+      onClick={handleMyCommentsClick}
+    >
+      작성한 댓글
+    </ActionButton>
+    <ActionButton
+      $variant="primary"
+      className="Button1"
+      onClick={handleBackToList}
+    >
+      스터디 목록
+    </ActionButton>
+  </ButtonGroup>
+</UserProfileCard>
         </LeftPanel>
 
         <RightPanel>
