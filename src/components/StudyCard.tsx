@@ -10,6 +10,7 @@ import ChinaProfileImg from "../assets/img-profile1-China.svg";
 interface StudyCardProps {
   study: StudyItem;
   onClick?: () => void;
+  currentUserId?: number;
 }
 
 // 국가별 캐릭터 이미지 매핑
@@ -116,10 +117,14 @@ const MoreButton = styled.span`
   }
 `;
 
-const StudyCard = ({ study, onClick }: StudyCardProps) => {
-    // 이미지 우선순위: 업로드 이미지 > 국가 캐릭터 > 한국 기본
-  const authorCountryCode = (study as any).authorCountry || (study as any).authorNation;
-  
+const StudyCard = ({ study, onClick, currentUserId }: StudyCardProps) => {
+  // 🔹 기본이미지 모드 여부
+  const useDefaultProfile =
+    typeof window !== "undefined" &&
+    localStorage.getItem("useDefaultProfileImage") === "true";
+
+  // 🔹 작성자 국가코드 → 기본 캐릭터
+  const authorCountryCode = study.authorCountry;
   const fallbackCharacter =
     (authorCountryCode &&
       countryCharacterImages[
@@ -127,12 +132,21 @@ const StudyCard = ({ study, onClick }: StudyCardProps) => {
       ]) ||
     KoreaProfileImg;
 
-  let characterImage = study.authorProfileImageUrl || fallbackCharacter;
+  // 🔹 서버에서 준 작성자 프로필 URL
+  let characterImage: string | null = study.authorProfileImageUrl;
 
-  // URL에 // 중복 들어오는 경우 방지
-  if (characterImage) {
-    characterImage = characterImage.replace(/([^:]\/)\/+/g, "$1");
+  // 🔹 이 카드의 작성자가 "나"인 경우 + 기본이미지 모드면 → 업로드 이미지 무시
+  if (
+    currentUserId &&
+    study.authorId === currentUserId &&
+    useDefaultProfile
+  ) {
+    characterImage = null;
   }
+
+  const finalSrc = characterImage
+    ? characterImage.replace(/([^:]\/)\/+/g, "$1")
+    : fallbackCharacter;
   
   // 캠퍼스 
   const campusMap: { [key: string]: string } = {
@@ -167,7 +181,7 @@ const primaryLanguage = study.languages?.[0];
   return (
     <CardContainer onClick={onClick}>
       <ProfileSection>
-        <ProfileImage src={characterImage} alt={study.authorNickname || "작성자"} />
+        <ProfileImage src={finalSrc} alt={study.authorNickname || "작성자"} />
       </ProfileSection>
       
       <ContentSection>

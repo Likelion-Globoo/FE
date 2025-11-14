@@ -67,6 +67,13 @@ const Mypage = () => {
         const res = await axiosInstance.get("/api/users/me");
         const user = res.data;
 
+         const useDefaultProfile =
+          localStorage.getItem("useDefaultProfileImage") === "true";
+
+        if (useDefaultProfile) {
+          user.profileImageUrl = null;
+        }
+
         setUserData(user);
 
         setLanguages({
@@ -177,7 +184,7 @@ const Mypage = () => {
         name: userData.name,
         nickname: updatedData.nickname || userData.nickname,
         mbti: updatedData.mbti || userData.mbti,
-        profileImageUrl: updatedData.profileImageUrl, // 수정
+         profileImageUrl: profileImageUrlToSend, //수정해요 수정 제발
         infoTitle: updatedData.infoTitle || userData.infoTitle,
         infoContent: updatedData.infoContent || userData.infoContent,
         campus: updatedData.campus || userData.campus,
@@ -214,11 +221,12 @@ const Mypage = () => {
       const refreshed = await axiosInstance.get("/api/users/me");
       const refreshedUser = refreshed.data;
 
-    // 백에서 null 반영 안해도 프엔에서 null이면 무조건 기본 이미지로 인정
-    if (profileImageUrlToSend === null) {
+      if (profileImageUrlToSend === null) {
       refreshedUser.profileImageUrl = null;
+      localStorage.setItem("useDefaultProfileImage", "true");
+    } else {
+      localStorage.removeItem("useDefaultProfileImage");
     }
-
       setUserData(refreshedUser);
       setLanguages({
         nativeCodes: refreshedUser.nativeLanguages || [],
@@ -248,6 +256,8 @@ const Mypage = () => {
       await axiosInstance.post("/api/users/me/profile-image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      localStorage.setItem("useDefaultProfileImage", "false");
   
       const refreshed = await axiosInstance.get("/api/users/me");
       const refreshedUser = refreshed.data;
@@ -302,6 +312,8 @@ const Mypage = () => {
       const refreshed = await axiosInstance.get("/api/users/me");
       const refreshedUser = refreshed.data;
 
+      localStorage.setItem("useDefaultProfileImage", "true");
+
       refreshedUser.profileImageUrl = null; //강제로 되돌리기(백에서 null 안줘도 프론트에서 처리)
 
       setUserData(refreshedUser);
@@ -314,6 +326,8 @@ const Mypage = () => {
         hobby: refreshedUser.hobbyKeywords || [],
         topic: refreshedUser.topicKeywords || [],
       });
+
+
 
       alert("프로필 이미지를 삭제하고 기본 이미지로 되돌렸습니다.");
     } catch (error) {
