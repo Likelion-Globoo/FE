@@ -40,7 +40,7 @@ const countryCharacterImages: { [key: CountryCode]: string } = {
   US: AmericaProfileImg,
   KR: KoreaProfileImg,
   IT: ItalyProfileImg,
-  EG: EgyptProfileImg,
+  AR: EgyptProfileImg,
   CN: ChinaProfileImg,
 };
 
@@ -49,7 +49,7 @@ const bannerWrapper: { [key: CountryCode]: string } = {
   US: AmericaBannerImg,
   KR: KoreaBannerImg,
   IT: ItalyBannerImg,
-  EG: EgyptBannerImg,
+  AR: EgyptBannerImg,
   CN: ChinaBannerImg,
 };
 

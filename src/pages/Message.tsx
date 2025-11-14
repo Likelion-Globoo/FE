@@ -354,16 +354,36 @@ export default function Message() {
 
                 return (
                   <MessageListBox
-                    key={room.id}
-                    onClick={() => setSelectedProfile(partner)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <CharacterImage
-                      src={partner.profileImageUrl || KoreaProfileImg}
-                      alt={`${partner.username} 이미지`}
-                    />
-                    <MessageNickname className="H4">{partner.username}</MessageNickname>
-                  </MessageListBox>
+          key={room.id}
+          onClick={async () => {
+            try {
+              const res = await axiosInstance.get(`/api/users/${partner.id}`);
+              const userDetail = res.data;
+
+              const enrichedPartner = {
+                ...partner,
+                nickname: userDetail.nickname,                      
+                username: userDetail.nickname || partner.username,   
+                country: userDetail.country ?? partner.country,     
+                profileImageUrl: userDetail.profileImageUrl ?? partner.profileImageUrl,
+              };
+
+              setSelectedProfile(enrichedPartner);
+            } catch (e) {
+              console.error("쪽지 상대 프로필 불러오기 실패:", e);
+              setSelectedProfile(partner);
+            }
+          }}
+          style={{ cursor: "pointer" }}
+        >
+          <CharacterImage
+            src={partner.profileImageUrl || KoreaProfileImg}
+            alt={`${partner.username} 이미지`}
+          />
+          <MessageNickname className="H4">
+            {partner.username}
+          </MessageNickname>
+        </MessageListBox>
                 );
               })
             ) : (
@@ -377,19 +397,21 @@ export default function Message() {
           <ChatBox>
           {selectedProfile ? (
             <ChatHeader>
-              <ChatProfileImg
-                src={COUNTRY_IMAGE_MAP[selectedProfile.country] || KoreaProfileImg}
-              />
-              <ChatNicname className="H2">{selectedProfile.username}</ChatNicname>
-              <OutContainer onClick={() => navigate("/")}>
-                <OutIcon />
-                <OutText className="Button2">채팅방 나가기</OutText>
-              </OutContainer>
-            </ChatHeader>
-          ) : (
-            <ChatHeader>
-              <ChatNicname className="H2">대화를 선택해주세요</ChatNicname>
-            </ChatHeader>
+    <ChatProfileImg
+      src={COUNTRY_IMAGE_MAP[selectedProfile.country] || KoreaProfileImg}
+    />
+    <ChatNicname className="H2">
+      {selectedProfile.nickname || selectedProfile.username}
+    </ChatNicname>
+    <OutContainer onClick={() => navigate("/")}>
+      <OutIcon />
+      <OutText className="Button2">채팅방 나가기</OutText>
+    </OutContainer>
+  </ChatHeader>
+) : (
+  <ChatHeader>
+    <ChatNicname className="H2">대화를 선택해주세요</ChatNicname>
+  </ChatHeader>
           )}
             <MessageContainer id="messageContainer">
               {selectedProfile ? (
