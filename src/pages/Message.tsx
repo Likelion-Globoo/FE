@@ -234,15 +234,44 @@ export default function Message() {
   useEffect(() => {
     const fetchChatRooms = async () => {
       try {
-        const res = await axiosInstance.get("/api/messages"); 
-        console.log("쪽지방 목록 조회 성공:", res.data);
-        setChatRooms(res.data); 
+        const res = await axiosInstance.get("/api/messages");
+        const rooms = res.data;
+  
+        // 각 user1, user2 프로필 상세 조회해서 nickname 삽입
+        const enrichedRooms = await Promise.all(
+          rooms.map(async (room) => {
+            // user1 상세 조회
+            const user1Detail = await axiosInstance.get(`/api/profiles/${room.user1.id}`);
+            // user2 상세 조회
+            const user2Detail = await axiosInstance.get(`/api/profiles/${room.user2.id}`);
+  
+            return {
+              ...room,
+              user1: {
+                ...room.user1,
+                nickname: user1Detail.data.nickname,  // nickname 추가
+                country: user1Detail.data.country,
+                profileImageUrl: user1Detail.data.profileImageUrl
+              },
+              user2: {
+                ...room.user2,
+                nickname: user2Detail.data.nickname, // nickname 추가
+                country: user2Detail.data.country,
+                profileImageUrl: user2Detail.data.profileImageUrl
+              }
+            };
+          })
+        );
+  
+        setChatRooms(enrichedRooms);
+  
       } catch (error) {
         console.error("쪽지방 목록 조회 실패:", error);
       }
     };
     fetchChatRooms();
   }, []);
+  
 
   useEffect(() => {
     if (!selectedProfile) return;
@@ -381,7 +410,7 @@ export default function Message() {
             alt={`${partner.username} 이미지`}
           />
           <MessageNickname className="H4">
-            {partner.username}
+            {partner.nickname}
           </MessageNickname>
         </MessageListBox>
                 );
@@ -401,7 +430,7 @@ export default function Message() {
       src={COUNTRY_IMAGE_MAP[selectedProfile.country] || KoreaProfileImg}
     />
     <ChatNicname className="H2">
-      {selectedProfile.nickname || selectedProfile.username}
+      {selectedProfile.nickname}
     </ChatNicname>
     <OutContainer onClick={() => navigate("/")}>
       <OutIcon />
