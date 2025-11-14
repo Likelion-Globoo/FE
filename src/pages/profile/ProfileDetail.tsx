@@ -127,11 +127,12 @@ const ProfileDetail = () => {
         };
   
         const profileImageUrl =
-        data.profileImage && data.profileImage.trim() !== ""
-          ? data.profileImage.startsWith("/uploads")
-            ? `${cleanBaseUrl}${data.profileImage}`
-            : data.profileImage
+        data.profileImageUrl && data.profileImageUrl.trim() !== ""
+          ? data.profileImageUrl.startsWith("/uploads")
+            ? `${cleanBaseUrl}${data.profileImageUrl}`
+            : data.profileImageUrl
           : countryCharacterImages[data.country?.toUpperCase()] || KoreaProfileImg;
+      
 
         const formattedData: ProfileDetailResponse = {
           userId: data.userId,
@@ -139,7 +140,7 @@ const ProfileDetail = () => {
           campus: data.campus,
           country: data.country,
           mbti: data.mbti,
-          profileImage: profileImageUrl, 
+          profileImageUrl: profileImageUrl, 
           introTitle: data.infoTitle,
           introContent: data.infoContent,
           keywords: data.keywords.map((k: any) => k.name),
@@ -225,7 +226,7 @@ const ProfileDetail = () => {
           nickname={userData.nickname}
           mbti={userData.mbti}
           country={userData.country}
-          profileImage={userData.profileImage}
+          profileImageUrl={userData.profileImageUrl}
           infoTitle={userData.introTitle}
           infoContent={userData.introContent}
           keywords={userData.keywords}

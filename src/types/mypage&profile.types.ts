@@ -143,7 +143,7 @@ export interface ProfileDetailResponse {
   country: string;
   mbti: string;
   keywords: string[];
-  profileImage: string | null;
+  profileImageUrl: string | null;
   introTitle: string;
   introContent: string;
   languages: {

@@ -385,7 +385,6 @@ const ProfileList: React.FC = () => {
         <SectionTitle className="H4">친구들의 프로필 보기</SectionTitle>
         <ProfileGrid>
           {profiles.map((profile) => {
-            console.log("🔥 리스트 API에서 받은 이미지:", profile.profileImageUrl);
           
             return (
               <ProfileBanner
