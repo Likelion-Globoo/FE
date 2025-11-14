@@ -20,7 +20,7 @@ export interface ProfileCardItem {
   campus: Campus | null;
   country: CountryCode | null;
   mbti: string | null;
-  profileImage: string | null;
+  profileImageUrl: string | null;
   nativeLanguages: Language[];
   learnLanguages: Language[];
   keywords: { id: number; name: string }[];
@@ -384,29 +384,34 @@ const ProfileList: React.FC = () => {
       <ContentContainer>
         <SectionTitle className="H4">친구들의 프로필 보기</SectionTitle>
         <ProfileGrid>
-          {profiles.map((profile) => (
-            <ProfileBanner
-              key={profile.userId}
-              userId={profile.userId}
-              nickname={profile.nickname}
-              campus={profile.campus}
-              country={profile.country}
-              mbti={profile.mbti}
-              profileImage={profile.profileImage}
-              languages={{
-                native: profile.nativeLanguages.map((l) => l.code),
-                learn: profile.learnLanguages.map((l) => l.code),
-              }}
-              keywords={profile.keywords.map((k) => k.name)}
-              intro={
-                profile.infoTitle && profile.infoContent
-                  ? `${profile.infoTitle}\n${profile.infoContent}`
-                  : ""
-              }
-              onClick={() => handleProfileClick(profile.userId)}
-            />
-          ))}
+          {profiles.map((profile) => {
+            console.log("🔥 리스트 API에서 받은 이미지:", profile.profileImageUrl);
+          
+            return (
+              <ProfileBanner
+                key={profile.userId}
+                userId={profile.userId}
+                nickname={profile.nickname}
+                campus={profile.campus}
+                country={profile.country}
+                mbti={profile.mbti}
+                profileImageUrl={profile.profileImageUrl}
+                languages={{
+                  native: profile.nativeLanguages.map((l) => l.code),
+                  learn: profile.learnLanguages.map((l) => l.code),
+                }}
+                keywords={profile.keywords.map((k) => k.name)}
+                intro={
+                  profile.infoTitle && profile.infoContent
+                    ? `${profile.infoTitle}\n${profile.infoContent}`
+                    : ""
+                }
+                onClick={() => handleProfileClick(profile.userId)}
+              />
+            );
+          })}
         </ProfileGrid>
+
       </ContentContainer>
 
       {totalPages > 1 && (

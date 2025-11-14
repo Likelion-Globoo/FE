@@ -28,7 +28,7 @@ export interface ProfileBannerProps {
   campus: Campus | null;
   country: CountryCode | null;
   mbti: string | null;
-  profileImage: string | null;
+  profileImageUrl: string | null; 
   languages: LanguagePair;
   keywords: string[];
   intro: string | null;
@@ -179,7 +179,6 @@ const InfoTags = styled.div`
 `;
 
 const InfoChip = styled.span`
-;
   color: var(--gray-700);
 `;
 
@@ -207,19 +206,48 @@ const IntroContent = styled.p`
   max-width: 255px
 `;
 
+export const getCleanImageUrl = (url: string | null, fallback: string) => {  
+  if (!url || url.trim() === "") {
+    return fallback;
+  }
+
+  const base = import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "");
+
+  // 절대경로면 그대로
+  if (url.startsWith("http")) {
+    return `${url}?t=${Date.now()}`;
+  }
+
+  // 상대경로면 BASE_URL 붙이기
+  return `${base}/${url.replace(/^\//, "")}?t=${Date.now()}`;
+};
+
+
+
+
+
 const ProfileBanner = ({ 
+  profileImageUrl,
   country,
+  nickname,
+  mbti,
+  keywords,
   campus,
   languages,
-  nickname, 
-  mbti, 
-  keywords, 
   intro,
   onClick,
 }: ProfileBannerProps) => {
-  const validCountry = country || 'KR';
-  const characterImgSrc = countryCharacterImages[validCountry] || KoreaProfileImg;
-  //기본 국가는 한국(KR)-따라서 캐릭터 이미지도 한국 이미지를 기본으로 설정(배너도)
+
+  const validCountry = (country || "KR").toUpperCase();
+  const defaultCharacter = countryCharacterImages[validCountry] || KoreaProfileImg;
+
+  const finalProfileImageUrl = profileImageUrl
+  ? getCleanImageUrl(profileImageUrl, "")
+  : defaultCharacter;
+
+
+
+
 
   // 캠퍼스 표시 텍스트
   // 😭api 확인 후 삭제 결정
@@ -263,7 +291,7 @@ const ProfileBanner = ({
 
         <MainContent>
           <LeftSection>
-            <ProfileImage src={characterImgSrc} />
+            <ProfileImage src={finalProfileImageUrl} alt="profile" />
             <Nickname className="H5">{nickname}</Nickname>
             {mbti && <MBTIBadge className="Button1">{mbti}</MBTIBadge>}
           </LeftSection>
@@ -283,7 +311,6 @@ const ProfileBanner = ({
     </CardWrapper>
   );
 };
-// introtitle - CTA로 변경했어요(닉네임(H5)과 구별하기 위해)
-// 칩 색도 변경했어요(기본 흰색 배경-카테고리 상관없이)
+
 
 export default ProfileBanner;
