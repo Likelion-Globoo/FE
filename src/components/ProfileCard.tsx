@@ -51,7 +51,7 @@ const countryCharacterImages: { [key: string]: string } = {
   US: AmericaProfileImg,
   KR: KoreaProfileImg,
   IT: ItalyProfileImg,
-  EG: EgyptProfileImg,
+  AR: EgyptProfileImg,
   CN: ChinaProfileImg,
 };
 
@@ -495,7 +495,7 @@ const [editedMbti, setEditedMbti] = useState(mbti);
   };
   
 
-  const displayName = `${name} / ${nickname}`;
+  const displayName = `${nickname}`;
 
 
   const campusName =
