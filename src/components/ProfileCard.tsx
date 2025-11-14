@@ -17,7 +17,7 @@ interface ProfileCardProps {
   nickname: string;
   mbti: string;
   country: string;
-  profileImage: string | null;
+  profileImageUrl: string | null;
   infoTitle: string | null;
   infoContent: string | null;
 
@@ -365,7 +365,7 @@ const ProfileCard = ({
   nickname,
   mbti,
   country,
-  profileImage,
+  profileImageUrl,
   infoTitle,
   infoContent,
   keywords,
@@ -384,15 +384,15 @@ const ProfileCard = ({
   const [editedData, setEditedData] = useState({
     infoTitle: infoTitle || "",
     infoContent: infoContent || "",
-    profileImage: profileImage || null,
+    profileImage: profileImageUrl || null,
   });
 
   useEffect(() => {
     setEditedData(prev => ({
       ...prev,
-      profileImage: profileImage || null, 
+      profileImage: profileImageUrl || null, 
     }));
-  }, [infoTitle, infoContent, profileImage]);
+  }, [infoTitle, infoContent, profileImageUrl]);
   
   
 
@@ -431,7 +431,7 @@ const ProfileCard = ({
   };
 
   const characterImage =
-    profileImage || countryCharacterImages[country] || "https://via.placeholder.com/200";
+    profileImageUrl || countryCharacterImages[country] || "https://via.placeholder.com/200";
 
 
 const processedKeywords = Array.isArray(keywords)
