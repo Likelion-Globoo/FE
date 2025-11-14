@@ -158,7 +158,6 @@ const StudyCard = ({ study, onClick, currentUserId }: StudyCardProps) => {
   const languageMap: { [key: string]: string } = {
     '한국어': '한국어',
     '영어': '영어',
-    '일본어': '일본어',
     '중국어': '중국어',
     '스페인어': '스페인어',
     '프랑스어': '프랑스어',
@@ -177,6 +176,8 @@ const primaryLanguage = study.languages?.[0];
   if (primaryCampus) tags.push(campusMap[primaryCampus] || primaryCampus);
   if (primaryLanguage) tags.push(languageMap[primaryLanguage] || primaryLanguage);
   if (study.tags) tags.push(...study.tags);
+  console.log("🌐 study.languages:", study.languages);
+  console.log("🌐 primaryLanguage:", primaryLanguage);
 
   return (
     <CardContainer onClick={onClick}>
