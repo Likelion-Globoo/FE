@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate, useLocation } from "react-router-dom";
 import ProfileCard from "../components/ProfileCard";
 import ActivityTabs from "../components/ActivityTabs";
 import axiosInstance from "../../axiosInstance";
@@ -27,6 +27,9 @@ const PageTitle = styled.h1`
 const Mypage = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
+  const location = useLocation();
+  const initialTab =
+  (location.state as any)?.activeTab === "comments" ? "comments" : "posts";
   const [languages, setLanguages] = useState<{ nativeCodes: string[]; learnCodes: string[] }>({
     nativeCodes: [],
     learnCodes: [],
@@ -39,8 +42,8 @@ const Mypage = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<"posts" | "comments">("posts");
-  const [myPosts, setMyPosts] = useState<Post[]>([]);
+  const [activeTab, setActiveTab] =
+  useState<"posts" | "comments">(initialTab);  const [myPosts, setMyPosts] = useState<Post[]>([]);
   const [myComments, setMyComments] = useState<Comment[]>([]);
 
   const LANGUAGE_MAP: Record<string, string> = {
@@ -200,7 +203,7 @@ const Mypage = () => {
       const refreshed = await axiosInstance.get("/api/users/me");
       const refreshedUser = refreshed.data;
 
-    // 백에서 null 반영 안해도 프엔에서 "null이면 무조건 기본 이미지"로 인정
+    // 백에서 null 반영 안해도 프엔에서 null이면 무조건 기본 이미지로 인정
     if (profileImageUrlToSend === null) {
       refreshedUser.profileImageUrl = null;
     }

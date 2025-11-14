@@ -388,7 +388,7 @@ const StudyDetail = () => {
 
     // 마이페이지/게시글 이동
     const handleMyPostsClick = () => { navigate("/mypage"); };
-    const handleMyCommentsClick = () => { navigate("/mypage"); };
+    const handleMyCommentsClick = () => { navigate("/mypage", {state: {activeTab: "comments"}}); };
     const handleBackToList = () => { 
   navigate("/study");
 };
@@ -676,6 +676,7 @@ const StudyDetail = () => {
                         onEditComment={handleEditComment}
                         onDeleteComment={handleDeleteComment}
                         isCommentsLoading={isCommentsLoading}
+                        currentUserProfileImageUrl={userMe?.profileImageUrl ?? null}
                     />
                 </RightPanel>
             </ContentWrapper>
